@@ -1,27 +1,40 @@
 {
-  description = "My Home Manager Flake Config";
+  description = "My Home Manager configuration";
 
   inputs = {
-    # 安定版のnixpkgsを使用（2026年現在の最新安定版例）
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-    
-    # Home Managerの入力をnixpkgsと同期
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }:
     let
-      system = "x86_64-linux"; # M1/M2/M3 Macの場合は "aarch64-darwin"
-      pkgs = nixpkgs.legacyPackages.${system};
-    in {
-      homeConfigurations."kwatanabe-nix" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
+      system = "x86_64-linux";
+      username = "kwatanabe-nix";
+      homeDirectory = "/home/${username}";
 
-        # home.nixを読み込む
-        modules = [ ./home.nix ];
+      pkgs = import nixpkgs {
+        inherit system;
+
+        # vscode, chrome, slack みたいな unfree パッケージを入れたくなった時用
+        config.allowUnfree = true;
       };
+    in
+    {
+      homeConfigurations.${username} =
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+
+          extraSpecialArgs = {
+            inherit username homeDirectory;
+          };
+
+          modules = [
+            ./home.nix
+          ];
+        };
     };
 }
