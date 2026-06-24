@@ -5,6 +5,11 @@
     ./bash.nix
     ./ssh.nix
     ./secrets-ssh.nix
+    ./oci.nix
+    ./secrets-oci.nix
+    ./k8s-tools.nix
+    ./k8s-oci.nix
+    ./starship.nix
   ];
 
   home.username = username;

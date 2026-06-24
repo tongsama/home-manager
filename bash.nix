@@ -28,6 +28,12 @@ in
     alias g='git'
     alias dc='docker compose'
     alias lla='ls -la'
+    alias k9s='LANG=C k9s'
+
+    #### starship initialization
+    if command -v starship >/dev/null 2>&1; then
+      eval "$(starship init bash)"
+    fi
   '';
 
   home.activation.ensureBashrcHomeManagerBlock =

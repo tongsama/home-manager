@@ -1,0 +1,8 @@
+
+
+[DEFAULT]
+user=ocid1.user.oc1..aaaaaaaamcldxunonuu4cnwp3uivmoadoirlqdxsfl2ctdtcrtyrpnxkhqhq
+fingerprint=ac:1e:b0:f3:52:79:51:98:68:e2:ef:2c:88:41:09:1c
+key_file=/home/kwatanabe-nix/.oci/sessions/DEFAULT/oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..aaaaaaaabszr2gvm7xxguiffgwfsozoazw2ava57yqvxol5ak2bghy6jmtea
+region=ap-osaka-1

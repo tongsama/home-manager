@@ -268,6 +268,7 @@ let
 
         # --filename-override により、stdin/temp経由でも .sops.yaml の path_regex を効かせる
         sops --encrypt \
+          --config "$sops_config" \
           --input-type json \
           --output-type yaml \
           --filename-override "$secrets_file" \
@@ -389,6 +390,7 @@ let
           printf '{}\n' > "$plain_json"
       
           sops --encrypt \
+            --config "$sops_config" \
             --input-type json \
             --output-type yaml \
             --filename-override "$secrets_file" \

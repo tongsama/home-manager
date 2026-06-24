@@ -1,2 +1,17 @@
 /result
 /result-*
+
+# plaintext SSH secrets
+secrets/plain-ssh/*
+!secrets/plain-ssh/.gitignore
+
+# plaintext OCI secrets
+secrets/plain-oci/*
+!secrets/plain-oci/.gitignore
+
+# local secret keys
+keys.txt
+*.plain
+*.dec
+*.tmp
+

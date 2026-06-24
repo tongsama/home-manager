@@ -1,0 +1,239 @@
+##### starship configuration
+#												  last upda-admin@tst-k8sed:2024-09-26 21:08.
+
+# general
+scan_timeout = 800  # default 30
+command_timeout = 1000  # default 500
+add_newline = false
+
+#format = '$all'
+format = """
+[](#9A348E)\
+$username\
+$hostname\
+[](bg:#DA627D fg:#9A348E)\
+$directory\
+[](fg:#DA627D bg:#FCA17D)\
+$git_branch\
+$git_status\
+[](fg:#FCA17D bg:#06969A)\
+$docker_context\
+$kubernetes\
+[](fg:#06969A bg:#86BBD8)\
+$python\
+$package\
+$all\
+[](fg:#86BBD8 bg:#33658A)\
+$line_break\
+$memory_usage\
+$time\
+$os\
+$status\
+$sudo\
+[ ](fg:#33658A)\
+$character\
+"""
+
+# directory
+[directory]
+disabled = false
+truncation_length = 4
+truncation_symbol = '.../'
+truncate_to_repo = true
+format = '[$path]($style)[$read_only]($read_only_style)'
+#format = ':[$path]($style)[$read_only]($read_only_style)/'
+style = "bg:#DA627D"
+
+# docker_context
+[docker_context]
+disabled = false
+format = '[🐳$context]($style)'
+style = "bg:#06969A"
+
+# git
+[git_branch]
+#format = ' [$symbol$branch(:$remote_branch)]($style) '
+format = '[$symbol$branch(:$remote_branch)]($style)'
+style = "bg:#FCA17D"
+
+[git_status]
+style = "bg:#FCA17D"
+format = '[$all_status$ahead_behind ]($style)'
+
+# hostname
+[hostname]
+ssh_only = false
+ssh_symbol = '🌐' #space trimmed
+format = '[@$ssh_symbol$hostname]($style)'
+style = "bg:#9A348E"
+
+# kubernetes
+[kubernetes]
+disabled = false
+#format = '\[[$symbol($user):($cluster):$context\(($namespace)\)]($style)\]'
+#format = '[\[$symbol($user):($cluster):$context\(($namespace)\)\]]($style)'
+format = '[\[$symbol:$context\(($namespace)\)\]]($style)'
+style = "bg:#06969A"
+detect_extensions = [ 'yaml', 'yml' ]
+detect_env_vars = [ 'INVALID' ] #v1.19 bug workaround https://github.com/starship/starship/issues/5978
+#detect_files = [ '*\.ya?ml', 'kustomization.yaml', 'kustomization.yml' ]
+[[kubernetes.contexts]]
+context_pattern = '.*dev-k8s.*'
+user_pattern = '(.*admin.*|.*oidc-.*)'
+style = 'white bold bg:#06969A'
+#style = 'dimmed yellow bold'
+##symbol = "樗"
+[[kubernetes.contexts]]
+context_pattern = '.*tst-k8s.*'
+user_pattern = '(.*admin.*|.*oidc-.*)'
+style = 'white bold bg:#A6A80A'
+##symbol = "樗"
+[[kubernetes.contexts]]
+context_pattern = '.*prd-k8s.*'
+user_pattern = '(.*admin.*|.*oidc-.*)'
+style = 'white bold bg:#A6363A'
+symbol = "樗"
+[[kubernetes.contexts]]
+context_pattern = '(kind|k3s|k3d).*local.*'
+user_pattern = '.*'
+style = 'white bold bg:#06369A'
+
+# line_break
+[line_break]
+disabled = false
+
+# memory_usage
+[memory_usage]
+disabled = false
+threshold = 50
+format  = '[$symbol$ram|$swap]($style)'
+style = "bg:#33658A"
+
+# OS
+[os]
+disabled = false
+format = '[$symbol]($style)'
+style = "bg:#33658A"
+
+# sudo
+[sudo]
+disabled = false
+format = '[$symbol]($style)'
+style = "bg:#33658A"
+
+# status
+[status]
+disabled = false
+format  = '[$symbol$status]($style)'
+style = "bg:#33658A"
+
+# time
+[time]
+disabled = false
+#format = '\[[$time]($style)\]'
+format = '[♥\[$time\]]($style)'
+#time_format = "%R" # Hour:Minute Format
+style = "bg:#33658A"
+
+# username
+[username]
+show_always = true
+format = '[$user]($style)'
+style_user = "bg:#9A348E"
+style_root = "bg:#9A348E"
+disabled = false
+
+# character
+[character]
+disabled = true
+
+
+# Languages or OTHERENVS
+[c]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[elixir]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[gradle]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = "󰆥 "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[scala]
+symbol = " "
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[helm]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[php]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[lua]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[ruby]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#86BBD8"
+format = '[ $symbol ${pyenv_prefix}(${version})(\($virtualenv\)) ]($style)'
+#pyenv_version_name = true
+
+[perl]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
+[package]
+style = "bg:#86BBD8"
+format = '[ $symbol ($version) ]($style)'
+
