@@ -4,6 +4,7 @@
   imports = [
     ./bash.nix
     ./ssh.nix
+    ./secrets-ssh.nix
   ];
 
   home.username = "kwatanabe-nix";

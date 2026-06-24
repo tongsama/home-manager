@@ -1,0 +1,8 @@
+keys:
+  - &kwatanabe_nix age1xwsw8tsnfkp8lkuwyccj6p9ddgf62knkc79q55vtr4zchpchvg9s2ujvrw
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *kwatanabe_nix
