@@ -80,6 +80,9 @@
               localConfigLoaded
               localConfigPathString
               ;
+            #wslgEnable = localConfig.wslgEnable or false;
+            guiProfile = localConfig.guiProfile or "none";
+            fcitx5Enable = localConfig.fcitx5Enable or false;
           };
 
           modules = [

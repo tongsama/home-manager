@@ -14,4 +14,15 @@
   # Optional.
   # If set, this wins over homePrefix + username.
   # homeDirectory = "/home/new_user";
+
+  # related fcitx5
+  # Examples:
+  #   none
+  #   wslg-x11
+  #   ubuntu-wayland
+  #   ubuntu-x11
+  guiProfile = "wslg-x11";
+
+  # fcitx5
+  fcitx5Enable= true;
 }

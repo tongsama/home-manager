@@ -25,14 +25,23 @@ in
 
     path_prepend "$HOME/Apps/bin"
 
+    ##### extra aliases
     alias g='git'
     alias dc='docker compose'
     alias lla='ls -la'
     alias k9s='LANG=C k9s'
 
-    #### starship initialization
+    ##### starship initialization
     if [ -n "$BASH_VERSION" ] && [ -x "${pkgs.starship}/bin/starship" ]; then
       eval "$("${pkgs.starship}/bin/starship" init bash)"
+    fi
+
+    ##### Load Home Manager bash fragments
+    if [ -d "$HOME/.config/bash/hm-extra.d" ]; then
+      for f in "$HOME"/.config/bash/hm-extra.d/*.bash; do
+        [ -r "$f" ] && . "$f"
+      done
+      unset f
     fi
   '';
 

@@ -5,6 +5,9 @@
 , homeDirectory
 , localConfigLoaded ? false
 , localConfigPathString ? ""
+#, wslgEnable ? false
+, guiProfile ? "none"
+, fcitx5Enable ? false
 , ...
 }:
 
@@ -22,6 +25,12 @@ in
     ./k8s-tools.nix
     ./k8s-oci.nix
     ./starship.nix
+
+    ./gui.nix
+    ./fonts.nix
+    ./vim.nix
+    ./wslg.nix
+    ./fcitx5.nix
   ];
 
   home.username = username;
@@ -29,9 +38,12 @@ in
 
   home.stateVersion = "26.05";
 
+  #my.wslg.enable = wslgEnable;
+  my.gui.profile = guiProfile;
+  my.fcitx5.enable = fcitx5Enable;
+
   home.packages = with pkgs; [
     git
-    vim
     tmux
     sops
     age
