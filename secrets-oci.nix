@@ -97,7 +97,7 @@ let
       age_key="$HOME/.config/sops/age/keys.txt"
       session_dir="${ociSessionDir}"
       key_name="${ociPrivateKeyName}"
-
+      flake_ref="${repoDir}#${config.home.username}"
       usage() {
         cat <<'EOF'
 Usage:
@@ -147,13 +147,13 @@ EOF
         if [ ! -e "$sops_config" ]; then
           cat > "$sops_config" <<EOF
 keys:
-  - &kwatanabe_nix $pub
+  - &main_user $pub
 
 creation_rules:
   - path_regex: secrets/.*\\.yaml$
     key_groups:
       - age:
-          - *kwatanabe_nix
+          - *main_user
 EOF
         fi
 
@@ -307,13 +307,13 @@ EOF
   chmod 700 ~/.config/sops ~/.config/sops/age
   cp <backup>/keys.txt ~/.config/sops/age/keys.txt
   chmod 600 ~/.config/sops/age/keys.txt
-  home-manager switch --flake ~/.config/home-manager#kwatanabe-nix -b backup
+  home-manager switch --flake "$flake_ref" -b backup
 
 新しい環境として作り直す場合:
   hm-oci-secrets init
   cp ~/.oci/sessions/DEFAULT/oci_api_key.pem ~/.config/home-manager/secrets/plain-oci/
   hm-oci-secrets sync
-  home-manager switch --flake ~/.config/home-manager#kwatanabe-nix -b backup
+  home-manager switch --flake "$flake_ref" -b backup
 
 注意:
   元のage秘密鍵が無いと、既存の secrets/oci.yaml は復号できないよ。

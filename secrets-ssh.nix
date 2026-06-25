@@ -160,13 +160,13 @@ let
         if [ ! -e "$sops_config" ]; then
           cat > "$sops_config" <<EOF
       keys:
-        - &kwatanabe_nix $pub
+        - &main_user $pub
 
       creation_rules:
         - path_regex: secrets/.*\\.yaml$
           key_groups:
             - age:
-                - *kwatanabe_nix
+                - *main_user
       EOF
         fi
 

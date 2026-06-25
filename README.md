@@ -1,118 +1,97 @@
-# Home Manager dotfiles
+# Home Manager configuration
 
-UbuntuなどのLinux環境で、Home Managerを使ってホームディレクトリ設定を復元するための設定リポジトリ。
+Ubuntu上で、Nix Home Managerを使ってユーザ環境を再現するための設定。
 
-この構成では、Ubuntu標準の `~/.bashrc` / `~/.profile` を丸ごとHome Manager管理にはしない。
-代わりに、必要な追加設定だけを別ファイルとしてHome Managerで管理する。
+このリポジトリは、既存のUbuntu標準設定をできるだけ壊さずに、ユーザ環境を宣言的・半宣言的に管理する。
 
-また、SSH秘密鍵は平文でGit管理しない。
-SOPS + ageで暗号化した `secrets/ssh.yaml` としてGit管理し、`home-manager switch` 時に復号して `~/.ssh/` に展開する。
+管理対象は主に以下。
 
-`sops-nix` moduleは使わない。
-systemdにも依存しない。
-`home.activation` と `sops` CLIで復号・展開する。
+* Nix flake
+* Home Manager
+* Bash追加設定
+* Starship prompt
+* SSH config
+* SSH秘密鍵のSOPS管理
+* OCI CLI設定
+* OCI API秘密鍵のSOPS管理
+* OKE kubeconfig生成
+* Kubernetes系CLI
 
----
+  * kubectl
+  * helm
+  * helm diff plugin
+  * helmfile
+  * k9s
 
 ## 前提
 
-このflakeは再現性重視のため、ユーザ名とHOMEを固定している。
-
-```nix
-system = "x86_64-linux";
-username = "kwatanabe-nix";
-homeDirectory = "/home/${username}";
-```
-
-別ユーザ名で使う場合は、`flake.nix` の以下を変更する。
-
-```nix
-username = "kwatanabe-nix";
-homeDirectory = "/home/${username}";
-```
-
-この設定の場合、Home Managerのflake attributeは以下になる。
-
-```text
-.#kwatanabe-nix
-```
-
----
-
-## 管理されるもの
-
-### インストールされるパッケージ
-
-`home.nix` の `home.packages` で以下を入れる。
-
-```nix
-home.packages = with pkgs; [
-  git
-  vim
-  tmux
-  sops
-  age
-];
-```
-
-### Home Manager自身
-
-Home Managerコマンドも管理する。
-
-```nix
-programs.home-manager.enable = true;
-```
-
-初回だけは `nix run` でHome Managerをネット越しに直接実行する。
-初回反映後は `home-manager` コマンドが使える。
-
-### Bash追加設定
-
-Ubuntu標準の `~/.bashrc` は丸ごと置き換えない。
-
-Home Managerは以下の追加ファイルを生成する。
-
-```text
-~/.config/bash/hm-extra.bash
-```
-
-`~/.bashrc` には、Home Managerのactivation scriptによって以下の管理ブロックが追加される。
+このリポジトリは、次の場所にcloneして使う前提。
 
 ```bash
-# >>> home-manager bash extras >>>
-# Home Manager bash extras
-[ -r "$HOME/.config/bash/hm-extra.bash" ] && . "$HOME/.config/bash/hm-extra.bash"
-# <<< home-manager bash extras <<<
+~/.config/home-manager
 ```
 
-これにより、Ubuntu標準のbash設定を壊さずに、追加のPATHやaliasだけをHome Manager側で管理する。
+README内では、対象ユーザ名をすべて `new_user` と表記する。
 
-### SSH config
+`new_user` は実ユーザ名ではなく、置き換え用のプレースホルダである。
+実際の環境では、`new_user` を対象ユーザ名に読み替える。
 
-`~/.ssh/config` をHome Managerで管理する。
+## ユーザ名について
 
-SSH秘密鍵ファイルは `~/.ssh/id_rsa_*` などに配置され、`~/.ssh/config` から参照される。
+このリポジトリは再現性重視のため、ユーザ名を `flake.nix` に明示している。
 
-### SSH秘密鍵
+初回適用前に、`flake.nix` の以下を対象ユーザ名へ変更する。
 
-SSH秘密鍵はGitに平文で入れない。
-
-暗号化済みファイルとして以下を管理する。
-
-```text
-secrets/ssh.yaml
+```nix
+username = "new_user";
+homeDirectory = "/home/${username}";
 ```
 
-復号用のage秘密鍵は以下に置く。
+例:
 
-```text
-~/.config/sops/age/keys.txt
+```nix
+username = "alice";
+homeDirectory = "/home/${username}";
 ```
 
-このファイルは絶対にGit管理しない。
-別環境で完全復元するには、このage秘密鍵のバックアップが必要。
+Home Managerのflake attribute名も `username` と同じになる。
 
----
+たとえば `username = "alice";` の場合、実行コマンドは以下になる。
+
+```bash
+home-manager switch --flake ~/.config/home-manager#alice -b backup
+```
+
+README内の `new_user` は、実際のユーザ名に読み替える。
+
+## リポジトリの公開範囲について
+
+このリポジトリは基本的にprivateで運用する。
+
+ただし、初回構築時はまだSSH秘密鍵が配置されていないため、private repositoryへSSH接続できない。
+そのため、初回clone時だけ一時的にリポジトリをpublicへ変更し、HTTPSでcloneする。
+
+cloneが終わったら、すぐにリポジトリをprivateへ戻す。
+
+重要:
+
+* publicにする時間は最小限にする
+* 平文の秘密鍵を絶対にcommitしない
+* `~/.config/sops/age/keys.txt` をcommitしない
+* `secrets/plain-ssh/` の中身をcommitしない
+* `secrets/plain-oci/` の中身をcommitしない
+* GitHub上でprivateに戻したことを確認してから作業を続ける
+
+初回clone例:
+
+```bash
+mkdir -p "$HOME/.config"
+
+nix shell nixpkgs#git -c \
+  git clone https://github.com/<owner>/<repo>.git "$HOME/.config/home-manager"
+```
+
+clone後、ただちにGitHub側でrepository visibilityをprivateへ戻す。
 
 ## ディレクトリ構成
 
@@ -124,47 +103,1137 @@ secrets/ssh.yaml
 ├── bash.nix
 ├── ssh.nix
 ├── secrets-ssh.nix
+├── oci.nix
+├── secrets-oci.nix
+├── k8s-tools.nix
+├── k8s-oci.nix
+├── starship.nix
 ├── .sops.yaml
 ├── .gitignore
+├── files/
+│   ├── oci/
+│   │   ├── config.template
+│   │   └── sessions/DEFAULT/oci_api_key_public.pem
+│   └── starship/
+│       └── starship.toml
 ├── secrets/
 │   ├── ssh.yaml
-│   └── plain-ssh/
+│   ├── oci.yaml
+│   ├── plain-ssh/
+│   │   └── .gitignore
+│   └── plain-oci/
 │       └── .gitignore
 └── README.md
 ```
 
----
+## Nix install方針
 
-## Git管理するもの
+Ubuntu上でユーザ作成から再現テストする場合は、multi-user Nixを推奨する。
 
-Git管理してよいもの。
+multi-user Nixは `nix-daemon` を使い、`/nix` storeをシステム全体で共有する。
+ユーザを削除して作り直しても、Nix storeが特定ユーザのhomeやUIDに依存しにくい。
+
+### 推奨: multi-user install
+
+Ubuntuなどsystemdが使える環境では、基本的にこちらを使う。
+
+```bash
+sh <(curl -L https://nixos.org/nix/install) --daemon
+```
+
+インストール後、ログインし直す。
+
+確認:
+
+```bash
+nix --version
+systemctl status nix-daemon
+```
+
+### 代替: single-user install
+
+systemdがない環境や、一時的な検証ではsingle-user installでもよい。
+
+```bash
+sh <(curl -L https://nixos.org/nix/install) --no-daemon
+```
+
+読み込み:
+
+```bash
+. "$HOME/.nix-profile/etc/profile.d/nix.sh"
+```
+
+ただし、single-user installは `/nix` がそのユーザに寄るため、ユーザ削除・再作成テストとは相性がよくない。
+
+## Flakes有効化
+
+ユーザごとに以下を設定する。
+
+```bash
+NIXCONF_DIR="$HOME/.config/nix"
+mkdir -p "$NIXCONF_DIR"
+
+cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
+experimental-features = nix-command flakes
+EOF
+```
+
+## 初回セットアップ
+
+### 1. ユーザ作成
+
+例:
+
+```bash
+sudo adduser new_user
+sudo usermod -aG sudo new_user
+```
+
+必要ならdockerグループなども追加する。
+
+```bash
+sudo usermod -aG docker new_user
+```
+
+ログイン:
+
+```bash
+su - new_user
+```
+
+### 2. Flakes有効化
+
+```bash
+NIXCONF_DIR="$HOME/.config/nix"
+mkdir -p "$NIXCONF_DIR"
+
+cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
+experimental-features = nix-command flakes
+EOF
+```
+
+### 3. リポジトリを一時的にpublicへ変更
+
+このリポジトリは基本private運用だが、初回構築時はSSH秘密鍵がまだ存在しない。
+
+そのため、初回clone前にGitHub側で一時的にrepository visibilityをpublicへ変更する。
+
+clone完了後は、すぐにprivateへ戻す。
+
+### 4. リポジトリをclone
+
+gitがまだない場合は、Nix経由でgitを一時実行する。
+
+```bash
+mkdir -p "$HOME/.config"
+
+nix shell nixpkgs#git -c \
+  git clone https://github.com/<owner>/<repo>.git "$HOME/.config/home-manager"
+```
+
+clone後、すぐにGitHub側でrepository visibilityをprivateへ戻す。
+
+移動:
+
+```bash
+cd "$HOME/.config/home-manager"
+```
+
+### 5. `flake.nix` のユーザ名を変更
+
+`flake.nix` の以下を、対象ユーザ名に変更する。
+
+```nix
+username = "new_user";
+homeDirectory = "/home/${username}";
+```
+
+たとえば対象ユーザが `alice` の場合:
+
+```nix
+username = "alice";
+homeDirectory = "/home/${username}";
+```
+
+この変更により、Home Managerのflake attributeも変わる。
+
+```bash
+.#alice
+```
+
+### 6. 初回Home Manager適用
+
+Home Managerがまだ入っていない状態では、`nix run` で実行する。
+
+```bash
+nix run github:nix-community/home-manager/release-26.05 -- \
+  switch --flake .#new_user -b backup
+```
+
+`new_user` は実際のユーザ名に読み替える。
+
+例:
+
+```bash
+nix run github:nix-community/home-manager/release-26.05 -- \
+  switch --flake .#alice -b backup
+```
+
+以後は `home-manager` コマンドが使える。
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+## 通常の反映コマンド
+
+```bash
+cd ~/.config/home-manager
+
+home-manager switch --flake .#new_user -b backup
+```
+
+または絶対パス指定。
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+`new_user` は実際のユーザ名に読み替える。
+
+## 管理対象
+
+### `flake.nix`
+
+NixpkgsとHome Managerのバージョン、ユーザ名、home directoryを定義する。
+
+```nix
+{
+  description = "Home Manager configuration";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+
+    home-manager = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }:
+    let
+      system = "x86_64-linux";
+      username = "new_user";
+      homeDirectory = "/home/${username}";
+
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    in
+    {
+      homeConfigurations.${username} =
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+
+          extraSpecialArgs = {
+            inherit username homeDirectory;
+          };
+
+          modules = [
+            ./home.nix
+          ];
+        };
+    };
+}
+```
+
+### `home.nix`
+
+各moduleを読み込む入口。
+
+```nix
+{ pkgs, username, homeDirectory, ... }:
+
+{
+  imports = [
+    ./bash.nix
+    ./ssh.nix
+    ./secrets-ssh.nix
+    ./oci.nix
+    ./secrets-oci.nix
+    ./k8s-tools.nix
+    ./k8s-oci.nix
+    ./starship.nix
+  ];
+
+  home.username = username;
+  home.homeDirectory = homeDirectory;
+
+  home.stateVersion = "26.05";
+
+  home.packages = with pkgs; [
+    git
+    vim
+    tmux
+    sops
+    age
+  ];
+
+  programs.home-manager.enable = true;
+}
+```
+
+## Bash設定
+
+Ubuntu標準の `~/.bashrc` と `~/.profile` はできるだけ維持する。
+
+Home Managerでは `programs.bash.enable = true;` を使わない。
+代わりに、追加設定を以下に生成する。
+
+```bash
+~/.config/bash/hm-extra.bash
+```
+
+`~/.bashrc` には、Home Managerのactivationで以下の管理ブロックだけを追加する。
+
+```bash
+# >>> home-manager bash extras >>>
+# Home Manager bash extras
+[ -r "$HOME/.config/bash/hm-extra.bash" ] && . "$HOME/.config/bash/hm-extra.bash"
+# <<< home-manager bash extras <<<
+```
+
+これにより、Ubuntu標準 `.bashrc` を壊さずに、aliasやPATH追加、Starship initだけを追加できる。
+
+### `hm-extra.bash`
+
+`hm-extra.bash` では、以下のような追加設定を行う。
+
+```bash
+path_prepend() {
+  case ":$PATH:" in
+    *":$1:"*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+}
+
+path_prepend "$HOME/Apps/bin"
+
+alias g='git'
+alias dc='docker compose'
+alias lla='ls -la'
+```
+
+### Starship init
+
+`programs.bash.enable = true;` を使っていないため、Home ManagerのStarship bash integrationは使わない。
+
+`hm-extra.bash` 側で、Nix store上のStarshipを絶対パスで呼び出す。
+
+実際の設定では、`bash.nix` で `${pkgs.starship}/bin/starship` を埋め込む。
+
+```bash
+if [ -n "$BASH_VERSION" ] && [ -x "/nix/store/...-starship/bin/starship" ]; then
+  eval "$("/nix/store/...-starship/bin/starship" init bash)"
+fi
+```
+
+これにより、`su -` でログインシェルに入った場合でも、`.profile` でNix profileが読み込まれる前にStarshipを初期化できる。
+
+確認:
+
+```bash
+su - new_user
+
+echo "$STARSHIP_SHELL"
+echo "$PROMPT_COMMAND"
+```
+
+期待値:
 
 ```text
-flake.nix
-flake.lock
-home.nix
-bash.nix
-ssh.nix
-secrets-ssh.nix
-.sops.yaml
-.gitignore
+bash
+starship_precmd
+```
+
+## Starship設定
+
+Starship本体はHome Managerで有効化する。
+
+```nix
+{ ... }:
+
+{
+  programs.starship = {
+    enable = true;
+    enableBashIntegration = false;
+  };
+
+  home.file.".config/starship.toml".source =
+    ./files/starship/starship.toml;
+}
+```
+
+設定ファイル:
+
+```text
+files/starship/starship.toml
+```
+
+配置先:
+
+```text
+~/.config/starship.toml
+```
+
+確認:
+
+```bash
+starship --version
+starship explain
+```
+
+## SSH設定
+
+SSH configはHome Managerで管理する。
+
+```text
+~/.ssh/config
+```
+
+`ssh.nix` では `config.home.homeDirectory` を使い、ローカルユーザ名に依存しないようにする。
+
+例:
+
+```nix
+{ config, ... }:
+
+let
+  homeDir = config.home.homeDirectory;
+in
+{
+  home.file.".ssh/config".text = ''
+    Host github.com
+      HostName github.com
+      User git
+      IdentityFile ${homeDir}/.ssh/id_rsa_github_nopass
+  '';
+}
+```
+
+注意:
+
+```sshconfig
+User some_remote_user
+```
+
+のような記述は、接続先サーバ上のリモートユーザ名であり、ローカルユーザ名ではない。
+必要がなければ変更しない。
+
+## SSH秘密鍵管理
+
+秘密鍵はGitに平文で入れない。
+
+SSH秘密鍵はSOPS + ageで暗号化し、以下に保存する。
+
+```text
 secrets/ssh.yaml
-secrets/plain-ssh/.gitignore
-README.md
 ```
 
-Git管理してはいけないもの。
+平文投入用ディレクトリ:
 
 ```text
-result
-result-*
-~/.config/sops/age/keys.txt
-secrets/plain-ssh/*
-~/.ssh/id_rsa_*
-~/.ssh/dev-k8s_pullkey_for_ansible
+secrets/plain-ssh/
 ```
 
-`.gitignore` 例。
+この中身はGit管理しない。
+
+### age key
+
+age秘密鍵は以下に置く。
+
+```text
+~/.config/sops/age/keys.txt
+```
+
+権限:
+
+```bash
+mkdir -p "$HOME/.config/sops/age"
+chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
+chmod 600 "$HOME/.config/sops/age/keys.txt"
+```
+
+この `keys.txt` はGit管理しない。
+別環境復元には、このファイルのバックアップが必要。
+
+### `.sops.yaml`
+
+SOPS設定。
+
+```yaml
+keys:
+  - &main_user age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *main_user
+```
+
+`main_user` はYAML anchor名。
+ユーザ名とは関係ない。
+
+### `hm-ssh-secrets`
+
+Home Manager適用後、以下の補助コマンドが使える。
+
+```bash
+hm-ssh-secrets init
+hm-ssh-secrets status
+hm-ssh-secrets sync
+hm-ssh-secrets sync --keep
+hm-ssh-secrets add <key-name>
+hm-ssh-secrets deploy
+hm-ssh-secrets deploy --soft
+hm-ssh-secrets edit
+```
+
+#### 初期化
+
+```bash
+hm-ssh-secrets init
+```
+
+#### 平文秘密鍵から暗号化
+
+```bash
+cp /path/to/id_rsa_github_nopass secrets/plain-ssh/id_rsa_github_nopass
+
+hm-ssh-secrets sync
+```
+
+`sync` は `secrets/plain-ssh/` の秘密鍵を `secrets/ssh.yaml` に暗号化して取り込み、平文ファイルを削除する。
+
+平文を残したい場合:
+
+```bash
+hm-ssh-secrets sync --keep
+```
+
+#### 標準入力から追加
+
+```bash
+hm-ssh-secrets add id_rsa_example
+```
+
+秘密鍵を貼り付け、最後に `Ctrl-D`。
+
+#### 復号して配置
+
+```bash
+hm-ssh-secrets deploy
+```
+
+配置先:
+
+```text
+~/.ssh/<key-name>
+```
+
+秘密鍵は `0600` で配置される。
+
+#### Home Manager switch時のsoft deploy
+
+Home Manager activationでは `hm-ssh-secrets deploy --soft` を実行する。
+
+`--soft` は、age keyや `secrets/ssh.yaml` がまだ無い場合でもHome Manager switchを止めない。
+初回構築時にsecret復元前でも最低限の環境構築を進めるため。
+
+## OCI設定
+
+OCI CLIはHome Managerで導入する。
+
+```nix
+home.packages = with pkgs; [
+  oci-cli
+];
+```
+
+OCI configと公開鍵は `files/` から配置する。
+
+```text
+files/oci/config.template
+files/oci/sessions/DEFAULT/oci_api_key_public.pem
+```
+
+OCI API秘密鍵はSOPSで管理する。
+
+```text
+secrets/oci.yaml
+```
+
+### OCI config template
+
+`~/.oci/config` は直接Git管理しない。
+代わりに以下のtemplateをGit管理する。
+
+```text
+files/oci/config.template
+```
+
+例:
+
+```ini
+[DEFAULT]
+user=ocid1.user.oc1..xxxxxxxx
+fingerprint=xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
+tenancy=ocid1.tenancy.oc1..xxxxxxxx
+region=ap-osaka-1
+key_file=@HOME_DIR@/.oci/sessions/DEFAULT/oci_api_key.pem
+```
+
+Home Manager activation時に `@HOME_DIR@` が `config.home.homeDirectory` に置換され、以下に `0600` で配置される。
+
+```text
+~/.oci/config
+```
+
+例:
+
+```ini
+key_file=/home/new_user/.oci/sessions/DEFAULT/oci_api_key.pem
+```
+
+別ユーザ名にした場合は自動で変わる。
+
+### OCI公開鍵
+
+公開鍵は以下に置く。
+
+```text
+files/oci/sessions/DEFAULT/oci_api_key_public.pem
+```
+
+Home Manager activation時に以下へ配置される。
+
+```text
+~/.oci/sessions/DEFAULT/oci_api_key_public.pem
+```
+
+### OCI秘密鍵
+
+平文投入用:
+
+```text
+secrets/plain-oci/oci_api_key.pem
+```
+
+暗号化後:
+
+```text
+secrets/oci.yaml
+```
+
+配置先:
+
+```text
+~/.oci/sessions/DEFAULT/oci_api_key.pem
+```
+
+秘密鍵は `0600` で配置される。
+
+### `hm-oci-secrets`
+
+Home Manager適用後、以下の補助コマンドが使える。
+
+```bash
+hm-oci-secrets init
+hm-oci-secrets status
+hm-oci-secrets sync
+hm-oci-secrets sync --keep
+hm-oci-secrets add
+hm-oci-secrets deploy
+hm-oci-secrets deploy --soft
+hm-oci-secrets edit
+```
+
+#### 初期化
+
+```bash
+hm-oci-secrets init
+```
+
+#### 平文秘密鍵から暗号化
+
+```bash
+cp /path/to/oci_api_key.pem secrets/plain-oci/oci_api_key.pem
+
+hm-oci-secrets sync
+```
+
+`sync` は `secrets/plain-oci/oci_api_key.pem` を `secrets/oci.yaml` に暗号化して取り込み、平文ファイルを削除する。
+
+平文を残したい場合:
+
+```bash
+hm-oci-secrets sync --keep
+```
+
+#### 標準入力から追加
+
+```bash
+hm-oci-secrets add
+```
+
+秘密鍵を貼り付け、最後に `Ctrl-D`。
+
+#### 復号して配置
+
+```bash
+hm-oci-secrets deploy
+```
+
+配置先:
+
+```text
+~/.oci/sessions/DEFAULT/oci_api_key.pem
+```
+
+#### Home Manager switch時のsoft deploy
+
+Home Manager activationでは `hm-oci-secrets deploy --soft` を実行する。
+
+`--soft` は、age keyや `secrets/oci.yaml` がまだ無い場合でもHome Manager switchを止めない。
+初回構築時にsecret復元前でも最低限の環境構築を進めるため。
+
+### OCI確認
+
+```bash
+oci iam region list
+```
+
+権限警告が出る場合は以下を確認する。
+
+```bash
+ls -la ~/.oci
+ls -la ~/.oci/config
+ls -la ~/.oci/sessions/DEFAULT
+```
+
+期待値:
+
+```text
+~/.oci                                  700
+~/.oci/sessions                         700
+~/.oci/sessions/DEFAULT                 700
+~/.oci/config                           600
+~/.oci/sessions/DEFAULT/oci_api_key.pem 600
+```
+
+## Kubernetes / OKE
+
+Kubernetes共通ツールは `k8s-tools.nix` で管理する。
+
+```nix
+{ pkgs, ... }:
+
+let
+  helm = pkgs.wrapHelm pkgs.kubernetes-helm {
+    plugins = with pkgs.kubernetes-helmPlugins; [
+      helm-diff
+    ];
+  };
+in
+{
+  home.packages = with pkgs; [
+    kubectl
+    helm
+    helmfile
+    k9s
+  ];
+}
+```
+
+注意:
+
+`pkgs.kubernetes-helm` とwrap済み `helm` の両方を `home.packages` に入れない。
+`bin/helm` が衝突する可能性がある。
+
+確認:
+
+```bash
+kubectl version --client
+helm version
+helm plugin list
+helm diff version
+helmfile --version
+k9s version
+```
+
+### OKE kubeconfig
+
+OKE kubeconfig生成は `k8s-oci.nix` で管理する。
+
+設定ファイル:
+
+```text
+~/.config/oke/default.env
+```
+
+例:
+
+```bash
+OCI_CLI_PROFILE=DEFAULT
+OCI_REGION=ap-osaka-1
+
+OKE_CLUSTER_ID=ocid1.cluster.oc1.ap-osaka-1.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+OKE_KUBE_ENDPOINT=PUBLIC_ENDPOINT
+
+# memo only
+OKE_PUBLIC_ENDPOINT=xxx.xxx.xxx.xxx:6443
+
+KUBECONFIG_PATH=$HOME/.kube/config
+```
+
+補助コマンド:
+
+```bash
+oke-kubeconfig
+```
+
+実行内容:
+
+```bash
+oci ce cluster create-kubeconfig \
+  --cluster-id "$OKE_CLUSTER_ID" \
+  --file "$KUBECONFIG_PATH" \
+  --region "$OCI_REGION" \
+  --token-version 2.0.0 \
+  --kube-endpoint "$OKE_KUBE_ENDPOINT" \
+  --overwrite
+```
+
+Home Manager activation時にも自動実行する。
+ただしOCI認証やネットワークに依存するため、失敗してもHome Manager switch自体は止めない。
+
+手動再実行:
+
+```bash
+oke-kubeconfig
+```
+
+確認:
+
+```bash
+kubectl config current-context
+kubectl get nodes
+```
+
+## Secret復元手順
+
+新環境で秘密情報を復元する場合は、まずage秘密鍵を復元する。
+
+```bash
+mkdir -p "$HOME/.config/sops/age"
+chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
+
+cp /path/to/backup/keys.txt "$HOME/.config/sops/age/keys.txt"
+chmod 600 "$HOME/.config/sops/age/keys.txt"
+```
+
+その後、Home Managerを再適用する。
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+または手動deploy。
+
+```bash
+hm-ssh-secrets deploy
+hm-oci-secrets deploy
+oke-kubeconfig
+```
+
+## ユーザ作成からの復元テスト
+
+このリポジトリの最終確認として、ユーザ削除・再作成からの復元を行う場合。
+
+README内では対象ユーザ名を `new_user` と表記する。
+実際の検証では、`new_user` を対象ユーザ名に読み替える。
+
+別のsudo可能ユーザ、またはrootから実行する。
+
+### 1. 対象ユーザを停止
+
+```bash
+sudo pkill -u new_user || true
+```
+
+### 2. 必要ならhomeを退避
+
+```bash
+sudo cp -a /home/new_user /home/new_user.before-delete
+```
+
+### 3. ユーザ削除
+
+```bash
+sudo deluser --remove-home new_user
+```
+
+### 4. ユーザ再作成
+
+```bash
+sudo adduser new_user
+sudo usermod -aG sudo new_user
+```
+
+必要なら追加グループも設定する。
+
+```bash
+sudo usermod -aG docker new_user
+```
+
+### 5. ログイン
+
+```bash
+su - new_user
+```
+
+### 6. Flakes有効化
+
+```bash
+NIXCONF_DIR="$HOME/.config/nix"
+mkdir -p "$NIXCONF_DIR"
+
+cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
+experimental-features = nix-command flakes
+EOF
+```
+
+### 7. 初回clone
+
+初回構築時はSSH秘密鍵がまだないため、リポジトリを一時的にpublicへ変更してHTTPSでcloneする。
+
+```bash
+mkdir -p "$HOME/.config"
+
+nix shell nixpkgs#git -c \
+  git clone https://github.com/<owner>/<repo>.git "$HOME/.config/home-manager"
+```
+
+cloneが終わったら、すぐにGitHub側でrepository visibilityをprivateへ戻す。
+
+### 8. `flake.nix` のユーザ名確認
+
+```bash
+cd "$HOME/.config/home-manager"
+```
+
+`flake.nix` の以下が対象ユーザ名になっていることを確認する。
+
+```nix
+username = "new_user";
+homeDirectory = "/home/${username}";
+```
+
+### 9. Home Manager初回適用
+
+```bash
+nix run github:nix-community/home-manager/release-26.05 -- \
+  switch --flake .#new_user -b backup
+```
+
+### 10. age key復元
+
+```bash
+mkdir -p "$HOME/.config/sops/age"
+chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
+
+cp /path/to/backup/keys.txt "$HOME/.config/sops/age/keys.txt"
+chmod 600 "$HOME/.config/sops/age/keys.txt"
+```
+
+### 11. 再適用
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+### 12. 動作確認
+
+```bash
+echo "$STARSHIP_SHELL"
+command -v starship
+command -v kubectl
+command -v helm
+command -v oci
+
+hm-ssh-secrets status
+hm-oci-secrets status
+
+oci iam region list
+kubectl config current-context
+helm plugin list
+```
+
+## Rollback
+
+直前のHome Manager generationに戻す。
+
+```bash
+home-manager switch --rollback
+```
+
+世代一覧:
+
+```bash
+home-manager generations
+```
+
+特定世代をactivate:
+
+```bash
+/nix/store/xxxxxxxx-home-manager-generation/activate
+```
+
+これはHome Manager管理下の前世代に戻す操作。
+Home Manager適用前のUbuntu素のhomeに完全復元する操作ではない。
+
+## Home Manager撤退
+
+完全撤退したい場合は、まず必要なファイルを退避する。
+
+```bash
+cp -a ~/.bashrc ~/.bashrc.before-hm-remove 2>/dev/null || true
+cp -a ~/.profile ~/.profile.before-hm-remove 2>/dev/null || true
+cp -a ~/.ssh ~/.ssh.before-hm-remove 2>/dev/null || true
+cp -a ~/.oci ~/.oci.before-hm-remove 2>/dev/null || true
+cp -a ~/.kube ~/.kube.before-hm-remove 2>/dev/null || true
+```
+
+`.bashrc` からHome Manager管理ブロックだけを消す場合:
+
+```bash
+awk '
+  $0 == "# >>> home-manager bash extras >>>" { in_block = 1; next }
+  $0 == "# <<< home-manager bash extras <<<" { in_block = 0; next }
+  !in_block { print }
+' ~/.bashrc > ~/.bashrc.no-hm
+
+mv ~/.bashrc ~/.bashrc.with-hm
+mv ~/.bashrc.no-hm ~/.bashrc
+```
+
+## Troubleshooting
+
+### `su -` 後にStarshipが効かない
+
+確認:
+
+```bash
+echo "SHELL=$SHELL"
+echo "0=$0"
+echo "PATH=$PATH"
+command -v bash
+command -v starship || echo "starship not found"
+ls -la ~/.bash_profile ~/.bash_login ~/.profile ~/.bashrc 2>/dev/null
+
+grep -n "hm-extra" ~/.bashrc
+grep -n "starship" ~/.config/bash/hm-extra.bash
+
+echo "$-"
+echo "$STARSHIP_SHELL"
+echo "$PROMPT_COMMAND"
+echo "$PS1"
+```
+
+`~/.profile` では `.bashrc` が先に読み込まれ、Nix profile読み込みが後になることがある。
+
+その場合、`.bashrc` から `hm-extra.bash` が読まれた時点では、まだ `starship` がPATHにいない。
+このリポジトリでは、`hm-extra.bash` 内で `${pkgs.starship}/bin/starship` を絶対パスで呼ぶことで回避している。
+
+### OCI configのpermission warning
+
+OCI CLIで以下のような警告が出る場合。
+
+```text
+WARNING: Permissions on /home/.../.oci/config are too open.
+```
+
+確認:
+
+```bash
+ls -la ~/.oci/config
+```
+
+期待値:
+
+```text
+-rw------- ... ~/.oci/config
+```
+
+このリポジトリでは `home.file` のsymlinkではなく、activationで `install -m 600` している。
+
+再適用:
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+### SOPSがcreation rulesを見つけられない
+
+エラー例:
+
+```text
+config file not found, or has no creation rules, and no keys provided through command line options
+```
+
+activationや補助コマンドの実行カレントディレクトリがrepoではない場合、SOPSが `.sops.yaml` を見つけられないことがある。
+
+このリポジトリの補助コマンドでは、以下を明示する。
+
+```bash
+sops --config "$sops_config" --filename-override "$secrets_file"
+```
+
+### Home Manager switch時に既存ファイル衝突
+
+既存ファイルがある場合は `-b backup` を付ける。
+
+```bash
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+これにより、衝突した既存ファイルは `.backup` として退避される。
+
+### `result` symlinkができた
+
+`home-manager build` を実行すると、カレントディレクトリに `result` symlinkができることがある。
+
+これは一時的なビルド結果へのリンクなので、Git管理しない。
+
+削除してよい。
+
+```bash
+rm -f result
+```
+
+`.gitignore` に以下を入れておく。
+
+```gitignore
+/result
+/result-*
+```
+
+## Git管理しないもの
+
+`.gitignore` 例:
 
 ```gitignore
 /result
@@ -174,6 +1243,9 @@ secrets/plain-ssh/*
 secrets/plain-ssh/*
 !secrets/plain-ssh/.gitignore
 
+secrets/plain-oci/*
+!secrets/plain-oci/.gitignore
+
 # local secret keys
 keys.txt
 *.plain
@@ -181,624 +1253,115 @@ keys.txt
 *.tmp
 ```
 
-`secrets/plain-ssh/.gitignore` は以下にする。
-
-```gitignore
-*
-!.gitignore
-```
-
----
-
-# Nix / Home Manager が無い環境から復元する
-
-NixやHome Managerがまだ入っていない素のUbuntu環境から復元する手順。
-
----
-
-## 1. Nixをインストールする
-
-single-user modeでNixをインストールする。
-
-```bash
-sh <(curl -L https://nixos.org/nix/install) --no-daemon
-```
-
-インストール後、現在のshellでNixを使えるようにする。
-
-```bash
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-```
-
-確認。
-
-```bash
-nix --version
-```
-
----
-
-## 2. flakesを有効化する
-
-flakesを使うため、Nixのユーザ設定に書いておく。
-
-```bash
-NIXCONF_DIR="$HOME/.config/nix"
-mkdir -p "$NIXCONF_DIR"
-
-cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
-experimental-features = nix-command flakes
-EOF
-```
-
-確認。
-
-```bash
-nix flake --help
-```
-
----
-
-## 3. このリポジトリを取得する
-
-`git` がまだ無い場合でも、Nix経由で一時的にgitを使える。
-
-```bash
-mkdir -p "$HOME/.config"
-
-nix shell nixpkgs#git -c git clone <this-repository-url> "$HOME/.config/home-manager"
-cd "$HOME/.config/home-manager"
-```
-
-すでにgitがある環境なら普通にcloneしてよい。
-
-```bash
-mkdir -p "$HOME/.config"
-git clone <this-repository-url> "$HOME/.config/home-manager"
-cd "$HOME/.config/home-manager"
-```
-
----
-
-## 4. flakeのユーザ設定を確認する
-
-`flake.nix` の以下が復元先ユーザと一致していることを確認する。
-
-```nix
-username = "kwatanabe-nix";
-homeDirectory = "/home/${username}";
-```
-
-この設定の場合、Home Managerのflake attributeは以下。
-
-```text
-.#kwatanabe-nix
-```
-
----
-
-## 5. Home Managerをネット越しに直接実行する
-
-まだ `home-manager` コマンドが無いので、最初は `nix run` でHome ManagerをGitHubから直接実行する。
-
-```bash
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#kwatanabe-nix -b backup
-```
-
-このコマンドで以下を同時に行う。
-
-* GitHub上のHome Managerを一時的に実行する
-* このリポジトリのflakeを評価する
-* `home.nix` を反映する
-* `programs.home-manager.enable = true;` により、以後使う `home-manager` コマンドを導入する
-
-もしflake attributeを現在のユーザ名に合わせている場合のみ、以下でもよい。
-
-```bash
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#$USER -b backup
-```
-
-ただし、`$USER` と `homeConfigurations` の名前が一致していないと失敗する。
-このリポジトリでは再現性重視のため、通常は以下のように明示する。
-
-```bash
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#kwatanabe-nix -b backup
-```
-
----
-
-## 6. 以後はhome-managerコマンドを使う
-
-初回switch後は `home-manager` コマンドが入っているので、次回以降はこれで反映できる。
-
-```bash
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
-```
-
-リポジトリ内にいる場合はこれでもよい。
-
-```bash
-cd "$HOME/.config/home-manager"
-home-manager switch --flake .#kwatanabe-nix -b backup
-```
-
----
-
-# SSH秘密鍵の復元
-
-この構成では、SSH秘密鍵はSOPS + ageで暗号化した `secrets/ssh.yaml` としてGit管理する。
-
-復号用のage秘密鍵は以下に置く。
+以下はGitに入れない。
 
 ```text
 ~/.config/sops/age/keys.txt
+secrets/plain-ssh/*
+secrets/plain-oci/*
+秘密鍵の平文
 ```
 
-このファイルはGit管理しない。
-別環境で完全復元するには、このage秘密鍵のバックアップが必要。
+## ユーザ名依存の確認
 
----
-
-## パターン1: age秘密鍵のバックアップがある場合
-
-これが一番きれいな復元方法。
-
-まず、復号用age鍵を配置する。
+機能ファイル側にユーザ名が直書きされていないか確認する。
 
 ```bash
-mkdir -p "$HOME/.config/sops/age"
-chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
+cd ~/.config/home-manager
 
-cp /path/to/backup/keys.txt "$HOME/.config/sops/age/keys.txt"
-chmod 600 "$HOME/.config/sops/age/keys.txt"
+grep -RIn \
+  --exclude-dir=.git \
+  --exclude=flake.lock \
+  --exclude=README.md \
+  'new_user\|/home/new_user\|#new_user' .
 ```
 
-その後、Home Managerを反映する。
+期待値は基本的に `flake.nix` の `username` だけ。
 
-```bash
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
+```text
+./flake.nix:      username = "new_user";
 ```
 
-これで `secrets/ssh.yaml` が復号され、SSH秘密鍵が `~/.ssh/` に展開される。
+OCI configは `files/oci/config.template` の `@HOME_DIR@` から生成するため、`/home/new_user` のような固定パスは書かない。
 
-確認。
+```ini
+key_file=@HOME_DIR@/.oci/sessions/DEFAULT/oci_api_key.pem
+```
+
+## よく使うコマンド
+
+Home Manager反映:
 
 ```bash
-ls -la "$HOME/.ssh"
+home-manager switch --flake "$HOME/.config/home-manager#new_user" -b backup
+```
+
+世代確認:
+
+```bash
+home-manager generations
+```
+
+rollback:
+
+```bash
+home-manager switch --rollback
+```
+
+SSH secrets確認:
+
+```bash
 hm-ssh-secrets status
 ```
 
-SSH接続テスト。
-
-```bash
-ssh -T git@github.com
-ssh -T odgit
-ssh -T git@hf.co
-```
-
----
-
-## パターン2: age秘密鍵はないが、SSH秘密鍵の平文バックアップがある場合
-
-新しい環境としてage鍵を作り直す。
-
-```bash
-hm-ssh-secrets init
-```
-
-既存のSSH秘密鍵を追加する。
-
-```bash
-cp /path/to/private-keys/id_rsa_* "$HOME/.config/home-manager/secrets/plain-ssh/"
-hm-ssh-secrets sync
-```
-
-その後、Home Managerを再適用する。
-
-```bash
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
-```
-
----
-
-## パターン3: age秘密鍵もSSH秘密鍵バックアップもない場合
-
-復元できない。
-
-`secrets/ssh.yaml` は暗号化されているため、復号用のage秘密鍵がなければ中身を取り出せない。
-
-必ず以下を安全な場所にバックアップしておく。
-
-```text
-~/.config/sops/age/keys.txt
-```
-
----
-
-# SSH秘密鍵を追加する
-
-## 方法A: ファイルを置いてsyncする
-
-秘密鍵ファイルを `secrets/plain-ssh/` に置く。
-
-```bash
-cp "$HOME/.ssh/id_rsa_github_nopass" "$HOME/.config/home-manager/secrets/plain-ssh/"
-cp "$HOME/.ssh/id_rsa_github_od_nopass" "$HOME/.config/home-manager/secrets/plain-ssh/"
-```
-
-暗号化ファイルを更新する。
-
-```bash
-hm-ssh-secrets sync
-```
-
-`sync` 後、`secrets/plain-ssh/` に置いた平文ファイルは削除される。
-
-平文ファイルを残したい場合のみ、以下を使う。
-
-```bash
-hm-ssh-secrets sync --keep
-```
-
-通常は `--keep` は使わない。
-
----
-
-## 方法B: 対話入力で追加する
-
-```bash
-hm-ssh-secrets add id_rsa_new
-```
-
-秘密鍵の中身を貼り付けて、最後に `Ctrl-D` を押す。
-
-その場で `secrets/ssh.yaml` が更新される。
-
----
-
-# SSH秘密鍵を展開する
-
-通常は `home-manager switch` 時に自動で展開される。
-
-```bash
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
-```
-
-手動で展開したい場合は以下を実行する。
+SSH secrets復号配置:
 
 ```bash
 hm-ssh-secrets deploy
 ```
 
-状態確認。
+OCI secrets確認:
 
 ```bash
-hm-ssh-secrets status
+hm-oci-secrets status
 ```
 
----
-
-# `hm-ssh-secrets` コマンド
-
-## 初期化
+OCI secrets復号配置:
 
 ```bash
-hm-ssh-secrets init
+hm-oci-secrets deploy
 ```
 
-以下を作成する。
-
-```text
-~/.config/sops/age/keys.txt
-~/.config/home-manager/.sops.yaml
-~/.config/home-manager/secrets/plain-ssh/.gitignore
-```
-
-`~/.config/sops/age/keys.txt` は復号用の秘密鍵。
-絶対にGitに入れない。
-
----
-
-## 状態確認
+OKE kubeconfig再生成:
 
 ```bash
-hm-ssh-secrets status
+oke-kubeconfig
 ```
 
-以下を確認できる。
-
-* repo path
-* age keyの有無
-* `.sops.yaml` の有無
-* `secrets/ssh.yaml` の有無
-* 復号できるか
-* `secrets/plain-ssh/` に未取り込みの平文ファイルがあるか
-
----
-
-## 暗号化ファイル更新
+OCI確認:
 
 ```bash
-hm-ssh-secrets sync
+oci iam region list
 ```
 
-`secrets/plain-ssh/` にある秘密鍵ファイルを `secrets/ssh.yaml` に取り込み、暗号化する。
-
----
-
-## 対話追加
+Kubernetes確認:
 
 ```bash
-hm-ssh-secrets add <key-name>
+kubectl config current-context
+kubectl get nodes
 ```
 
-例。
+Helm plugin確認:
 
 ```bash
-hm-ssh-secrets add id_rsa_github_new
+helm plugin list
+helm diff version
 ```
 
-秘密鍵を標準入力から読み取り、暗号化して取り込む。
-
----
-
-## 手動展開
+Starship確認:
 
 ```bash
-hm-ssh-secrets deploy
+echo "$STARSHIP_SHELL"
+starship explain
 ```
-
-`secrets/ssh.yaml` を復号して `~/.ssh/` に展開する。
-
----
-
-## 暗号化ファイルを直接編集
-
-```bash
-hm-ssh-secrets edit
-```
-
-SOPSで `secrets/ssh.yaml` を直接編集する。
-
----
-
-# 最短復元手順
-
-Nix未導入の新規Ubuntu環境での最短手順。
-
-```bash
-# 1. Nix install
-sh <(curl -L https://nixos.org/nix/install) --no-daemon
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-
-# 2. flakes enable
-NIXCONF_DIR="$HOME/.config/nix"
-mkdir -p "$NIXCONF_DIR"
-
-cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
-experimental-features = nix-command flakes
-EOF
-
-# 3. clone dotfiles
-mkdir -p "$HOME/.config"
-nix shell nixpkgs#git -c git clone <this-repository-url> "$HOME/.config/home-manager"
-cd "$HOME/.config/home-manager"
-
-# 4. first Home Manager switch
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#kwatanabe-nix -b backup
-
-# 5. restore age key if available
-mkdir -p "$HOME/.config/sops/age"
-chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
-cp /path/to/backup/keys.txt "$HOME/.config/sops/age/keys.txt"
-chmod 600 "$HOME/.config/sops/age/keys.txt"
-
-# 6. apply again to deploy SSH private keys
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
-```
-
-もし `homeConfigurations` 名を現在のユーザ名と一致させている場合は、以下のように `$USER` を使える。
-
-```bash
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#$USER -b backup
-```
-
-ただし、このリポジトリは再現性重視のため、通常は明示的に `.#kwatanabe-nix` を指定する。
-
----
-
-# よく使うコマンド
-
-```bash
-# Home Managerを適用
-home-manager switch --flake "$HOME/.config/home-manager#kwatanabe-nix" -b backup
-
-# リポジトリ内から適用
-cd "$HOME/.config/home-manager"
-home-manager switch --flake .#kwatanabe-nix -b backup
-
-# SSH secrets状態確認
-hm-ssh-secrets status
-
-# SSH秘密鍵を追加
-cp "$HOME/.ssh/id_rsa_new" "$HOME/.config/home-manager/secrets/plain-ssh/"
-hm-ssh-secrets sync
-
-# SSH秘密鍵を対話追加
-hm-ssh-secrets add id_rsa_new
-
-# SSH秘密鍵を手動展開
-hm-ssh-secrets deploy
-
-# 暗号化ファイルを直接編集
-hm-ssh-secrets edit
-
-# flake inputs更新
-cd "$HOME/.config/home-manager"
-nix flake update
-home-manager switch --flake .#kwatanabe-nix -b backup
-```
-
----
-
-# トラブルシュート
-
-## `age key not found` と表示される
-
-復号用age鍵がない。
-
-既存環境から復元する場合は、バックアップしておいた以下を配置する。
-
-```text
-~/.config/sops/age/keys.txt
-```
-
-配置コマンド。
-
-```bash
-mkdir -p "$HOME/.config/sops/age"
-chmod 700 "$HOME/.config/sops" "$HOME/.config/sops/age"
-
-cp /path/to/backup/keys.txt "$HOME/.config/sops/age/keys.txt"
-chmod 600 "$HOME/.config/sops/age/keys.txt"
-```
-
-新規環境として作り直す場合は以下。
-
-```bash
-hm-ssh-secrets init
-```
-
----
-
-## `secrets/ssh.yaml` がないと言われる
-
-まだSSH秘密鍵が暗号化管理されていない。
-
-```bash
-hm-ssh-secrets init
-cp "$HOME/.ssh/id_rsa_xxx" "$HOME/.config/home-manager/secrets/plain-ssh/"
-hm-ssh-secrets sync
-```
-
----
-
-## GitHub SSH接続が失敗する
-
-SSH configを確認する。
-
-```bash
-cat "$HOME/.ssh/config"
-```
-
-秘密鍵が展開されているか確認する。
-
-```bash
-ls -la "$HOME/.ssh"
-```
-
-権限を確認する。
-
-```bash
-chmod 700 "$HOME/.ssh"
-chmod 600 "$HOME/.ssh"/id_rsa_*
-```
-
-接続テスト。
-
-```bash
-ssh -T git@github.com
-```
-
-OpenDoor用aliasの接続テスト。
-
-```bash
-ssh -T odgit
-```
-
-Hugging Faceの接続テスト。
-
-```bash
-ssh -T git@hf.co
-```
-
----
-
-## `home-manager` コマンドがない
-
-初回は `nix run` でHome Managerを直接実行する。
-
-```bash
-cd "$HOME/.config/home-manager"
-nix run github:nix-community/home-manager/release-26.05 -- switch --flake .#kwatanabe-nix -b backup
-```
-
-初回適用後は、`programs.home-manager.enable = true;` により `home-manager` コマンドが使えるようになる。
-
----
-
-## `nix flake` が使えない
-
-flakesが有効化されていない可能性がある。
-
-```bash
-NIXCONF_DIR="$HOME/.config/nix"
-mkdir -p "$NIXCONF_DIR"
-
-cat > "$NIXCONF_DIR/nix.conf" <<'EOF'
-experimental-features = nix-command flakes
-EOF
-```
-
-その後、新しいshellを開くか、Nixのprofileを読み直す。
-
-```bash
-. "$HOME/.nix-profile/etc/profile.d/nix.sh"
-```
-
-確認。
-
-```bash
-nix flake --help
-```
-
----
-
-## Home Managerのビルド結果 `result` ができる
-
-`home-manager build` を実行すると、カレントディレクトリに `result` というsymlinkが作られることがある。
-
-これはGit管理不要。
-
-削除してよい。
-
-```bash
-rm result
-```
-
-`.gitignore` に入れておく。
-
-```gitignore
-/result
-/result-*
-```
-
----
-
-# 注意
-
-SSH秘密鍵やage秘密鍵は、平文でGitに入れない。
-
-特に以下は絶対にcommitしない。
-
-```text
-~/.config/sops/age/keys.txt
-~/.ssh/id_rsa_*
-~/.config/home-manager/secrets/plain-ssh/*
-```
-
-`secrets/ssh.yaml` は暗号化済みなのでGit管理してよい。
-
-ただし、復号用の `~/.config/sops/age/keys.txt` を失うと、既存の `secrets/ssh.yaml` は復号できない。
-このage秘密鍵は必ず安全な場所にバックアップしておく。
 

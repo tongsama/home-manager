@@ -13,7 +13,7 @@
   outputs = inputs@{ self, nixpkgs, home-manager, ... }:
     let
       system = "x86_64-linux";
-      username = "kwatanabe-nix";
+      username = "new_user";
       homeDirectory = "/home/${username}";
 
       pkgs = import nixpkgs {
