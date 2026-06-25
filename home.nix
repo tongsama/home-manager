@@ -32,6 +32,7 @@ in
     ./secrets-vim.nix
     ./wslg.nix
     ./fcitx5.nix
+    ./nodejs.nix
   ];
 
   home.username = username;

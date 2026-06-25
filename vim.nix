@@ -27,7 +27,6 @@ in
     universal-ctags
     w3m
     fzf
-    nodejs
     ripgrep
   ];
 
