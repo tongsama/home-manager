@@ -1,5 +1,8 @@
 /result
 /result-*
+/local.nix
+/local.*.nix
+!/local.example.nix
 
 # plaintext SSH secrets
 secrets/plain-ssh/*

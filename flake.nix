@@ -1,5 +1,5 @@
 {
-  description = "My Home Manager configuration";
+  description = "Home Manager configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -12,29 +12,88 @@
 
   outputs = inputs@{ self, nixpkgs, home-manager, ... }:
     let
-      system = "x86_64-linux";
-      username = "new_user";
-      homeDirectory = "/home/${username}";
+      lib = nixpkgs.lib;
+
+      # Pure evaluation fallback.
+      #
+      # This keeps a no---impure path available.
+      # If local.nix exists but --impure is forgotten, home.nix will stop
+      # activation before modifying files.
+      defaultConfig = {
+        username = "new_user";
+        homePrefix = "/home";
+        system = "x86_64-linux";
+      };
+
+      localConfigPathString =
+        let
+          envPath = builtins.getEnv "HM_LOCAL_CONFIG";
+          home = builtins.getEnv "HOME";
+        in
+          if envPath != "" then
+            envPath
+          else if home != "" then
+            "${home}/.config/home-manager/local.nix"
+          else
+            "";
+
+      localConfigPath =
+        if localConfigPathString != "" then
+          /. + localConfigPathString
+        else
+          null;
+
+      localConfigLoaded =
+        localConfigPath != null && builtins.pathExists localConfigPath;
+
+      localConfig =
+        if localConfigLoaded then
+          import localConfigPath
+        else
+          {};
+
+      effectiveConfig = defaultConfig // localConfig;
+
+      system = effectiveConfig.system;
+      username = effectiveConfig.username;
+      homePrefix = effectiveConfig.homePrefix or "/home";
+
+      homeDirectory =
+        if effectiveConfig ? homeDirectory then
+          effectiveConfig.homeDirectory
+        else
+          "${homePrefix}/${username}";
 
       pkgs = import nixpkgs {
         inherit system;
-
-        # vscode, chrome, slack みたいな unfree パッケージを入れたくなった時用
         config.allowUnfree = true;
       };
-    in
-    {
-      homeConfigurations.${username} =
+
+      hmConfiguration =
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
 
           extraSpecialArgs = {
-            inherit username homeDirectory;
+            inherit
+              username
+              homeDirectory
+              localConfigLoaded
+              localConfigPathString
+              ;
           };
 
           modules = [
             ./home.nix
           ];
+        };
+    in
+    {
+      homeConfigurations =
+        {
+          default = hmConfiguration;
+        }
+        // lib.optionalAttrs (username != "default") {
+          ${username} = hmConfiguration;
         };
     };
 }
