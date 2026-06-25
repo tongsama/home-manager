@@ -12,6 +12,10 @@ secrets/plain-ssh/*
 secrets/plain-oci/*
 !secrets/plain-oci/.gitignore
 
+# plaintext vim secrets
+secrets/plain-vim/*
+!secrets/plain-vim/.gitignore
+
 # local secret keys
 keys.txt
 *.plain

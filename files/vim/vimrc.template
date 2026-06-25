@@ -1,7 +1,7 @@
 "========================================================================"
 " vimrc for vim8.x & 9.0.x & nvim
 " 			for windows, linux
-" 									last updated:2026-06-19 14:33.
+" 									last updated:2026-06-25 20:16.
 "
 " 			Plese Install Vundle.vim or vim-plug first.
 "========================================================================"
@@ -2203,7 +2203,7 @@ let g:copilot_filetypes = #{
 "* {{{ vim-chatgpt.vim
 "* need chatgpt client install in PATH
 "* https://github.com/mattn/chatgpt
-let g:chatgpt_api_key="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"
+let g:chatgpt_api_key="@OPENAI_API_KEY@"
 let $CHATGPT_API_KEY=g:chatgpt_api_key
 let g:chatgpt_lang="ja"
 "*}}}

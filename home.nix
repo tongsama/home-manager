@@ -29,6 +29,7 @@ in
     ./gui.nix
     ./fonts.nix
     ./vim.nix
+    ./secrets-vim.nix
     ./wslg.nix
     ./fcitx5.nix
   ];

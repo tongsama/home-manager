@@ -31,7 +31,7 @@ in
     ripgrep
   ];
 
-  home.file.".vimrc".source = ./files/vim/vimrc;
+  # .vimrc は secrets-vim.nix が template + SOPS secret から生成する。
   home.file.".vim/autoload/plug.vim".source = vimPlug;
 
   home.sessionVariables = {
