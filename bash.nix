@@ -31,8 +31,8 @@ in
     alias k9s='LANG=C k9s'
 
     #### starship initialization
-    if command -v starship >/dev/null 2>&1; then
-      eval "$(starship init bash)"
+    if [ -n "$BASH_VERSION" ] && [ -x "${pkgs.starship}/bin/starship" ]; then
+      eval "$("${pkgs.starship}/bin/starship" init bash)"
     fi
   '';
 
