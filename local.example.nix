@@ -25,4 +25,8 @@
 
   # fcitx5
   fcitx5Enable= true;
+
+  # Google Drive のマウント先 (省略時は "~/Gdrive_kwatan")。
+  # 空文字 "" にすると Google Drive 連携を無効化する。
+  googleDriveDir = "~/Gdrive_kwatan";
 }

@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, googleDriveDir ? "~/Gdrive_kwatan", ... }:
 
 let
   startMarker = "# >>> home-manager bash extras >>>";
@@ -35,6 +35,23 @@ in
     if [ -n "$BASH_VERSION" ] && [ -x "${pkgs.starship}/bin/starship" ]; then
       eval "$("${pkgs.starship}/bin/starship" init bash)"
     fi
+
+    ##### Google Drive directory detection (NIX_HM_GOOGLEDRIVE_DIR)
+    # googleDriveDir が空でなく、その実体ディレクトリに1つ以上の
+    # ファイル/ディレクトリが存在する場合のみ、指定された値そのものを
+    # NIX_HM_GOOGLEDRIVE_DIR に入れる。そうでなければ環境変数を設定しない。
+    __hm_gdrive_cfg="${googleDriveDir}"
+    case "$__hm_gdrive_cfg" in
+      "~")   __hm_gdrive_path="$HOME" ;;
+      "~/"*) __hm_gdrive_path="$HOME/''${__hm_gdrive_cfg#~/}" ;;
+      *)     __hm_gdrive_path="$__hm_gdrive_cfg" ;;
+    esac
+    if [ -n "$__hm_gdrive_cfg" ] \
+      && [ -d "$__hm_gdrive_path" ] \
+      && [ -n "$(ls -A "$__hm_gdrive_path" 2>/dev/null)" ]; then
+      export NIX_HM_GOOGLEDRIVE_DIR="${googleDriveDir}"
+    fi
+    unset __hm_gdrive_cfg __hm_gdrive_path
 
     ##### Load Home Manager bash fragments
     if [ -d "$HOME/.config/bash/hm-extra.d" ]; then

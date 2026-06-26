@@ -30,6 +30,7 @@ in
     ./fonts.nix
     ./vim.nix
     ./secrets-vim.nix
+    ./skkdict.nix
     ./wslg.nix
     ./fcitx5.nix
     ./nodejs.nix

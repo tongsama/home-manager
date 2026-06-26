@@ -1,7 +1,7 @@
 "========================================================================"
 " vimrc for vim8.x & 9.0.x & nvim
 " 			for windows, linux
-" 									last updated:2026-06-25 20:16.
+" 									last updated:2026-06-26 18:24.
 "
 " 			Plese Install Vundle.vim or vim-plug first.
 "========================================================================"
@@ -1557,9 +1557,32 @@ elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
 endif
 
 "## eskk (logfiles etc.)
-let g:eskk#directory			= s:eskk_home
-let g:eskk#dictionary			= { 'path': s:skkdic_dir."/.skk-jisyo.utf8", 'sorted': 0, 'encoding': 'utf-8', }
-let g:eskk#large_dictionary		= { 'path': s:skkdic_dir."/SKK-JISYO.MY.LL.eucjp", 'sorted': 1, 'encoding': 'eucjp', }
+"* クラウド(Google Drive)上のpathが有効ならそれを使い、無効ならローカルに
+"* フォールバックする (クラウド優先・ローカル退避)。
+"* ローカルの読み込み専用辞書は home-manager(skkdict.nix)が
+"* ~/.SKK-JISYO.MY.LL.eucjp に配置する。
+"
+"* eskk home (log/ 等). クラウドのディレクトリが無ければ ~/.eskk を使う
+"* (ローカルが無くてもeskkが自動生成する)
+if isdirectory(expand(s:eskk_home))
+	let g:eskk#directory		= s:eskk_home
+else
+	let g:eskk#directory		= '~/.eskk'
+endif
+"* study jisyo (学習辞書)
+let s:eskk_dict_cloud = s:skkdic_dir . "/.skk-jisyo.utf8"
+if filereadable(expand(s:eskk_dict_cloud))
+	let g:eskk#dictionary		= { 'path': s:eskk_dict_cloud, 'sorted': 0, 'encoding': 'utf-8', }
+else
+	let g:eskk#dictionary		= { 'path': '~/.skk-jisyo.utf8', 'sorted': 0, 'encoding': 'utf-8', }
+endif
+"* reference only jisyo (読み込み専用辞書)
+let s:eskk_large_cloud = s:skkdic_dir . "/SKK-JISYO.MY.LL.eucjp"
+if filereadable(expand(s:eskk_large_cloud))
+	let g:eskk#large_dictionary	= { 'path': s:eskk_large_cloud, 'sorted': 1, 'encoding': 'eucjp', }
+else
+	let g:eskk#large_dictionary	= { 'path': '~/.SKK-JISYO.MY.LL.eucjp', 'sorted': 1, 'encoding': 'eucjp', }
+endif
 "* neocompleteが入っていれば自動補完が効くが、通常のomni補完を利用しているので、手動でも<C-x><C-o>で利用は可能
 let g:eskk#enable_completion	= 1
 let g:eskk#show_annotation		= 1
