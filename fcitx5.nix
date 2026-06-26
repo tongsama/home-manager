@@ -94,8 +94,18 @@ in
         SDL_IM_MODULE = "fcitx";
       }
       // lib.optionalAttrs isWslgX11 {
-        # WSLgではfcitx5をXWayland側に倒す
-        GDK_BACKEND = "x11";
+        # WSLgではfcitx5をXWayland側に倒すため、以前は全GTKアプリを X11 強制していた。
+        #
+        # しかし GDK_BACKEND=x11 を強制すると、Nixビルドの gVim (新しめの GTK3) の
+        # ダイアログ (「変更を保存しますか?」等) が WSLg(Weston RAIL) のフォーカスを
+        # 受け取れず、クリックできなくなる。apt版 gVim (別の GTK3 ビルド) では問題なし。
+        # GDK_BACKEND=wayland で起動するとダイアログ正常 & fcitx5 の日本語入力もOK、と
+        # WSLg上で確認済み (2026-06)。
+        #
+        # そのため GDK_BACKEND の X11 強制を無効化し、GTKアプリに Wayland を優先させる。
+        # 不具合のある GTK アプリが出たら、その時に再検討 / 再有効化する。
+        # (QT_QPA_PLATFORM=xcb は GTK とは別系統なので、ひとまず据え置く)
+        # GDK_BACKEND = "x11";
         QT_QPA_PLATFORM = "xcb";
       }
       // lib.optionalAttrs isUbuntuWayland {
@@ -127,8 +137,11 @@ in
         export XMODIFIERS=@im=fcitx
         export SDL_IM_MODULE=fcitx
     
-        export GDK_BACKEND=x11
-        export QT_QPA_PLATFORM=xcb    
+        # GDK_BACKEND=x11 の強制は無効化 (理由は fcitx5.nix の sessionVariables のコメント参照)。
+        # Nix gVim の GTK3 ダイアログが WSLg+XWayland でフォーカスを受け取れない問題のため。
+        # GDK_BACKEND=wayland でも fcitx5 入力はOKと確認済み (2026-06)。
+        #export GDK_BACKEND=x11
+        export QT_QPA_PLATFORM=xcb
 
         # WSLg + fcitx5:
         # Wayland frontendを使わず、XWayland/XIM/GTK IM module側へ寄せる。

@@ -58,7 +58,9 @@ fcitx5 -d --disable=wayland,waylandim
 
 ### WSLgでfcitx5が効かない
 
-WSLgでは、Wayland frontendではなくXWayland側へ寄せる。
+WSLgでは、fcitx5自体は `--disable=wayland,waylandim` でWayland frontendを使わず、
+GTK IM module / XIM 側へ寄せる。
+（`GDK_BACKEND=x11` の強制は現在無効化。詳細は [gui-input.md](gui-input.md) の「WSLg + fcitx5」注記を参照）
 
 確認:
 
