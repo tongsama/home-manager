@@ -43,7 +43,7 @@ in
     __hm_gdrive_cfg="${googleDriveDir}"
     case "$__hm_gdrive_cfg" in
       "~")   __hm_gdrive_path="$HOME" ;;
-      "~/"*) __hm_gdrive_path="$HOME/''${__hm_gdrive_cfg#~/}" ;;
+      "~/"*) __hm_gdrive_path="$HOME/''${__hm_gdrive_cfg#"~/"}" ;;
       *)     __hm_gdrive_path="$__hm_gdrive_cfg" ;;
     esac
     if [ -n "$__hm_gdrive_cfg" ] \
