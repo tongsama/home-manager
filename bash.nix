@@ -62,6 +62,16 @@ in
     fi
   '';
 
+  # 端末設定 fragment。
+  # XON/XOFF フロー制御を無効化し、<C-q> / <C-s> を端末に奪われず
+  # アプリ (Vim 等) に届くようにする。
+  # 対話シェルかつ stdin が端末のときだけ実行 (非対話/非tty での ioctl エラー回避)。
+  home.file.".config/bash/hm-extra.d/tty.bash".text = ''
+    if [[ $- == *i* ]] && [ -t 0 ]; then
+      stty -ixon 2>/dev/null || true
+    fi
+  '';
+
   home.activation.ensureBashrcHomeManagerBlock =
     lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       bashrc="${config.home.homeDirectory}/.bashrc"
