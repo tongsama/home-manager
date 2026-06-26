@@ -1,0 +1,2408 @@
+"========================================================================"
+" vimrc for vim8.x & 9.0.x & nvim
+" 			for windows, linux
+" 									last updated:2026-06-26 18:24.
+"
+" 			Plese Install Vundle.vim or vim-plug first.
+"========================================================================"
+"{{{ #### vim install note ###
+"* ubuntu 22.04.3-lts(jammy) for vim-9.0
+"* add repository
+"sudo add-apt-repository ppa:jonathonf/vim
+"sudo apt update
+"sudo apt upgrade
+"sudo apt install gvim -y
+"* At first, download and install pluginfile to autoload dir.
+"* unix
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+"}}}
+
+"********************************************************************
+"{{{ ### initialize common
+"
+"### default encoding & vimrc script encoding
+set encoding=utf-8
+scriptencoding utf-8
+
+set nocompatible
+filetype off
+
+set modeline
+set modelines=5
+"source $VIMRUNTIME/vimrc_example.vim
+
+"### till set filetypes with plugin load session
+syntax off
+set redrawtime=10000 "default=2000
+
+"### leader settings
+set timeout
+set timeoutlen=3000
+
+"### history settings
+set history=1000
+
+"### viminfo
+set viminfo='1000
+
+"### other
+"# for lexima
+set backspace=indent,eol,start
+"}}}
+
+"### {{{ load secrets ###################################
+"# ~/.vimrc-secrets は home-manager の hm-vim-secrets が
+"# files/vim/dotvimrc-secrets.template + sops から switch 時に生成する。
+"# g:openai_api_key などの秘密値を定義する。
+"# home-manager 管理外のホストでは存在しないため filereadable で保護する。
+if filereadable(expand('~/.vimrc-secrets'))
+	source ~/.vimrc-secrets
+endif
+"}}}
+
+"### {{{ path for every environments ########################################
+"#
+"# windows $VIM enrionment()vim home) is set to /path/to/installed/vim80/../
+"# & windows version path should not be included msys/cygwin commands,
+"#   because msys/cygwin use unix style path system
+"#   mingw is OK.
+"# on windows link $HOME/development/* link to G:\マイドライブ\MyPrograms\development\*
+"# by admin console
+"# mklink /D %userprofile%\development\python "G:\マイドライブ\MyPrograms\development\python"
+" ** 64bit vim must be loaded for 64bit python3
+"
+"## additional external command path(search 1st)
+"#### tool symlink collection directory (for no widechar)
+let s:win_devtools = $HOME.'\development'
+"{{{ old settings
+"let s:additional_command_path_win = 'C:\python38;C:\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\msys64\usr\bin'
+"let s:additional_command_path_win = 'C:\Python310;C:\python38;C:\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\msys64\mingw64\bin;C:\node-win-x64;'.s:win_devtools.'\Git\Git_win64\bin;'.s:win_devtools.'\python\Python310_win64;'.s:win_devtools.'\LLVM\llvm_13.0.1_win64\bin;'.s:win_devtools.'\nodejs\node-win-x64;'
+"let s:additional_command_path_win = 'C:\python310;C:\python310\Scripts:C:\python38;C:\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\msys64\mingw64\bin;'.s:win_devtools.'\Git\Git_win64\bin;'.s:win_devtools.'\Git\Git_win64\usr\bin;'.s:win_devtools.'\python\Python3114_win64;'.s:win_devtools.'\python\Python3114_win64\Scripts;'.s:win_devtools.'\python\Python310_win64;'.s:win_devtools.'\python\Python310_win64\Scripts;'.s:win_devtools.'\LLVM\llvm_13.0.1_win64\bin;'.s:win_devtools.'\nodejs\node-win-x64;'
+"}}}
+let s:additional_command_path_win = 'C:\Git\usr\bin;'
+let s:additional_command_path_win .= 'C:\Program Files\Git\usr\bin;'
+let s:additional_command_path_win .= s:win_devtools.'\Git\Git_win64\cmd;'
+let s:additional_command_path_win .= s:win_devtools.'\Git\Git_win64\bin;'
+let s:additional_command_path_win .= s:win_devtools.'\Git\Git_win64\usr\bin;'
+let s:additional_command_path_win .= s:win_devtools.'\Git\Git_win64\mingw64\bin;'
+let s:additional_command_path_win .= s:win_devtools.'\python\Python311_win64;'
+let s:additional_command_path_win .= s:win_devtools.'\python\Python311_win64\Scripts;'
+let s:additional_command_path_win .= s:win_devtools.'\python\Python310_win64;'
+let s:additional_command_path_win .= s:win_devtools.'\python\Python310_win64\Scripts;'
+let s:additional_command_path_win .= s:win_devtools.'\LLVM\llvm_13.0.1_win64\bin;'
+let s:additional_command_path_win .= 'C:\nodejs\node-win-x64;'
+let s:additional_command_path_win .= s:win_devtools.'\nodejs\node-win-x64;'
+let s:additional_command_path_win .= s:win_devtools.'\lua\lua-5.4.2_Win64;'
+let s:additional_command_path_win .= 'C:\msys64\mingw64\bin;'
+"""python special (trouble on windows vim8.x)
+"let s:win_python3_dll_path = s:win_devtools.'\python\Python368_win64\python36.dll'
+
+let s:vim_path = $VIM
+"## NVIM patch
+"nvim-from-vim: https://neovim.io/doc/user/nvim.html#nvim-from-vim
+if has('nvim')
+	if has('win32')
+		let s:vim_path = s:vim_path.'\..\..\..'
+	endif
+endif
+
+"## Vundle(or PluginManager) path
+"let s:vundle_path_win = s:vim_path.'/vimfiles_kw/bundle/Vundle.vim/'
+"vim-plug(autoload) located here(on windows)
+let s:vundle_path_win = s:vim_path.'/vimfiles_kw/'
+let s:vundle_path_unix = '~/.vim/bundle/Vundle.vim/'
+"## Vundle Plugin install path (vim-plug standard is ~/.vim/plugged)
+let s:vundle_plugin_path_win = s:vim_path.'/vimfiles_kw/bundle'
+let s:vundle_plugin_path_unix = '~/.vim/bundle'
+
+"## additional runtime path for manual installed plugin
+let s:additional_runtimepath_win = s:vim_path.'/vimfiles_kw/plugin/*'
+let s:additional_runtimepath_unix = '~/.vimfiles/plugin/*'
+
+"## env common cloud storage for various usage (now howm_dir)
+let s:cloudstorage_home_win = 'G:/マイドライブ'
+let s:cloudstorage_home_unix = '~/Gdrive_kwatan'
+"}}}
+
+"### {{{ OS judgement ###################################
+if has('win32')
+	let ostype = "Win"
+	"source $VIMRUNTIME/mswin.vim     "windows style copy&paste "(<C-p>,<C-c>,<C-v>)
+	if !has("nvim")
+		behave mswin
+	endif
+
+	let $PATH = $PATH.';'.s:additional_command_path_win
+	"let $PATH = s:additional_command_path_win.';'.$PATH
+
+	set diffexpr=MyDiff()
+	function MyDiff()
+		let opt = '-a --binary '
+		if &diffopt =~ 'icase' | let opt = opt . '-i ' | endif
+		if &diffopt =~ 'iwhite' | let opt = opt . '-b ' | endif
+		let arg1 = v:fname_in
+		if arg1 =~ ' ' | let arg1 = '"' . arg1 . '"' | endif
+		let arg2 = v:fname_new
+		if arg2 =~ ' ' | let arg2 = '"' . arg2 . '"' | endif
+		let arg3 = v:fname_out
+		if arg3 =~ ' ' | let arg3 = '"' . arg3 . '"' | endif
+		let eq = ''
+		if $VIMRUNTIME =~ ' '
+			if &sh =~ '\<cmd'
+				let cmd = '""' . $VIMRUNTIME . '\diff"'
+				let eq = '"'
+			else
+				let cmd = substitute($VIMRUNTIME, ' ', '" ', '') . '\diff"'
+			endif
+		else
+			let cmd = $VIMRUNTIME . '\diff'
+		endif
+		silent execute '!' . cmd . ' ' . opt . arg1 . ' ' . arg2 . ' > ' . arg3 . eq
+	endfunction
+elseif has('mac')
+	let ostype = "Mac"
+else
+	let ostype = system("uname")
+endif
+
+"## コンソールでのカラー表示のための設定(暫定的にUNIX専用)
+if has('unix') && !has('gui_running') && !has('nvim')
+	let uname = system('uname')
+	if uname =~? "linux"
+		set term=builtin_linux
+	elseif uname =~? "freebsd"
+		set term=builtin_cons25
+	elseif uname =~? "Darwin"
+		set term=beos-ansi
+	else
+		set term=builtin_xterm
+	endif
+	unlet uname
+endif
+"}}}
+
+"### {{{ Environment Marking which environment of a lot of mine? #################################
+if ostype =~# 'Win'
+	"if system("hostname") =~# 'KA-WATANABE'
+	if hostname() =~# 'KA-WATANABE'
+		let g:kwenv = 'Win_work_ka-watanabe'
+	"elseif system("hostname") =~# 'ODPC160527'
+	elseif hostname() =~# 'ODPC160527'
+		let g:kwenv = 'Win_work_ODPC160527'
+	"elseif system("hostname") =~# 'ODPCN00284'
+	elseif hostname() =~# 'ODPCN00284'
+		let g:kwenv = 'Win_work_ODPCN000284'
+	"elseif system("hostname") =~# 'ODPC240501'
+	elseif hostname() =~# 'ODPC240501'
+		let g:kwenv = 'Win_work_ODPC240501'
+	"elseif system("hostname") =~# 'kcl-sg'
+	elseif hostname() =~# 'KCL-SG'
+		let g:kwenv = 'Win_home_surfacego'
+	elseif hostname() =~# 'KCL-SB2'
+		let g:kwenv = 'Win_home_surfacebook2'
+	elseif hostname() =~# 'KCL-WINMAX'
+		let g:kwenv = 'Win_home_winmax'
+	"elseif system("hostname") =~# 'kcl-winmax'
+	else
+		let g:kwenv = 'Win_home_'
+	endif
+
+elseif ostype =~# 'Linux'
+	if system("hostname") =~# 'zaurus'
+		let g:kwenv = 'Linux_home_zaurus'
+	elseif system("hostname") =~# 'kcl-sg'
+		let g:kwenv = 'Linux_home_wsl_surfacego'
+	elseif system("hostname") =~# 'Ubuntu-winmax'
+		let g:kwenv = 'Linux_home_ubuntu'
+	elseif system("hostname") =~# 'ubults'
+		let g:kwenv = 'Linux_home_ubuntu'
+	elseif system("hostname") =~# 'kcl-winmax'
+		let g:kwenv = 'Linux_home_wsl_kcl-winmax'
+	elseif system("hostname") =~# 'ubuntu-lts'
+		let g:kwenv = 'Linux_work_ubuntu'
+	elseif system("hostname") =~# 'penguin'
+		let g:kwenv = 'Linux_work_crostini'
+	elseif system("hostname") =~# 'ODPCN00284'
+		let g:kwenv = 'Linux_work_wsl_ODPCN00284'
+	elseif system("hostname") =~# 'ODPC160527'
+		let g:kwenv = 'Linux_work_wsl_ODPC160527'
+	elseif system("hostname") =~# 'ODPC240501'
+		let g:kwenv = 'Linux_work_wsl_ODPC240501'
+	else
+		let g:kwenv = 'Unix_general'
+	endif
+elseif ostype =~# 'CYGWIN'
+	let g:kwenv = 'Unix_general'
+endif
+"}}}
+
+"### {{{ additional runtimedir etc. (~plugin/{each-plugin}/plugin) ###################
+"set runtimepath+=~/.vimfiles/
+if kwenv =~# 'Win_'
+"	set runtimepath+=D:/0_0/MyDocuments_mount/MyPrograms/vim72/Vim/vimfiles_kw/plugin/*
+"	set runtimepath+=\\vmware-host/Shared\ Folders/host_Documents/old_pc_MyDocuments/MyPrograms/vim73/VIM/vimfiles_kw/plugin/*
+"	set runtimepath+=C:/Users/ka-watanabe/Documents/old_pc_MyDocuments/MyPrograms/vim73/VIM/vimfiles_kw/plugin/*
+"	set runtimepath+=C:/Users/ka-watanabe/Documents/MyPrograms/vim73/Vim/vimfiles_kw/plugin/*
+	""set rtp+=D:/MyPrograms/gvim/Vim/vimfiles_kw/plugin/*
+	let s:add_rtp=&rtp.','.s:additional_runtimepath_win
+	let s:cloudstorage_home = s:cloudstorage_home_win
+	"if v:version >= 900
+		"let &pythonthreedll = s:win_python3_dll_path
+	"endif
+elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
+	"set rtp+=~/.vimfiles/plugin/*
+	let s:add_rtp=&rtp.','.s:additional_runtimepath_unix
+	let s:cloudstorage_home = s:cloudstorage_home_unix
+endif
+let &rtp=s:add_rtp
+
+"}}}
+
+"### {{{ Environment Specific Start Up font & Window Size #$#############
+"if has("gui_win32") || has("windows")
+if has("gui_running")
+	"#### set minimum window size
+	"# disable menu bar temporary for set minimum size
+	set guioptions-=m
+	"# set minimum window size
+	set winwidth=15
+	set winminwidth=15
+	set winheight=5
+	set winminheight=5
+	"# set current size
+	set columns=80
+	set lines=30
+	"# enable menu bar
+	"set guioptions+=m
+	"
+	"#### GUI options
+	"# disable toolbar menu icons
+	set guioptions-=T
+
+	"# fonts
+	if kwenv =~# 'Win_work_ka-watanabe'
+		set guifont=MS_Gothic:h9:cSHIFTJIS
+		"set guifont=UDEV_Gothic_NF:h10:cANSI:qDRAFT
+		"set printfont=UDEV_Gothic_NF:h10:cANSI:qDRAFT
+
+	elseif kwenv =~# 'Win_work_ODPC160527'
+		if !has('nvim')
+			"set guifont=MS_Gothic:h9:cSHIFTJIS
+			"set printfont=MS_Gothic:h10:cSHIFTJIS
+			"set guifont=Ricty_Diminished:h9
+			"set printfont=Ricty_Diminished:h9
+			set guifont=UDEV_Gothic_NF:h10
+			set printfont=UDEV_Gothic_NF:h10
+		elseif has('nvim')
+			set guifont=UDEV\ Gothic\ NF:h10
+		endif
+	elseif kwenv =~# 'Win_home_surfacebook2'
+		"set guifont=Ricty_Diminished:h12
+		"set printfont=Ricty_Diminished:h12
+		set guifont=UDEV_Gothic_NF:h10
+		set printfont=UDEV_Gothic_NF:h10
+		" autocmd GUIEnter * simalt ~x
+		" autocmd GUIEnter * winpos 100 0
+
+	elseif kwenv =~# 'Win_home_surfacego'
+		set guifont=Ricty_Diminished:h12
+		set printfont=Ricty_Diminished:h12
+		" autocmd GUIEnter * simalt ~x
+		" autocmd GUIEnter * winpos 100 0
+
+	elseif kwenv =~# 'Win_home_winmax'
+		if !has('nvim')
+			"set guifont=Ricty_Diminished_Discord_for_Po:h11
+			"set printfont=Ricty_Diminished_Discord_for_Po:h11
+			set guifont=UDEV_Gothic_NF:h11
+			set printfont=UDEV_Gothic_NF:h10
+			" autocmd GUIEnter * simalt ~x
+			" autocmd GUIEnter * winpos 100 0	"
+		elseif has('nvim')
+			set guifont=UDEV\ Gothic\ NF:h11
+		endif
+
+	elseif kwenv =~# 'Linux_work_ubuntu'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"** nerd font patched (nerffont includes powerline)**
+		"set guifont=RictyDiminishedDiscord\ NF\ 10
+		"set printfont=RictyDiminishedDiscord\ NF\ 10
+		"set guifont=UDEV\ Gothic\ NF\ 10
+		"set printfont=UDEV\ Gothic\ NF\ 10
+		"set guifont=PlemolJP\ Console\ NF\ 10
+		"set printfont=PlemolJP\ Console\ NF\ 10
+		"set guifont=HackGen\ Console\ NF\ 10
+		"set printfont=HackGen\ Console\ NF\ 10
+		set guifont=Bizin\ Gothic\ Discord\ NF\ 11
+		set guifontwide=Bizin\ Gothic\ Discord\ NF\ 11
+		set printfont=Bizin\ Gothic\ Discord\ NF\ 11
+
+	elseif kwenv =~# 'Linux_work_wsl_ODPCN00284'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set guifont=UDEV\ Gothic\ NF\ 10
+		"set printfont=UDEV\ Gothic\ NF\ 10
+		set guifont=Bizin\ Gothic\ Discord\ NF\ 11
+		set guifontwide=Bizin\ Gothic\ Discord\ NF\ 11
+		set printfont=Bizin\ Gothic\ Discord\ NF\ 11
+
+	elseif kwenv =~# 'Linux_work_wsl_ODPC160527'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set guifont=UDEV\ Gothic\ NF\ 1 
+		"set guifontwide=UDEV\ Gothic\ NF\ 10
+		"set printfont=UDEV\ Gothic\ NF\ 10
+		set guifont=Bizin\ Gothic\ Discord\ NF\ 11
+		set guifontwide=Bizin\ Gothic\ Discord\ NF\ 11
+		set printfont=Bizin\ Gothic\ Discord\ NF\ 11
+
+	elseif kwenv =~# 'Linux_work_wsl_ODPC240501'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set guifont=UDEV\ Gothic\ NF\ 1 
+		"set guifontwide=UDEV\ Gothic\ NF\ 10
+		"set printfont=UDEV\ Gothic\ NF\ 10
+		set guifont=Bizin\ Gothic\ Discord\ NF\ 11
+		set guifontwide=Bizin\ Gothic\ Discord\ NF\ 11
+		set printfont=Bizin\ Gothic\ Discord\ NF\ 11
+
+	elseif kwenv =~# 'Linux_work_crostini'
+		set guifont=UDEV\ Gothic\ NF\ 10
+		set printfont=UDEV\ Gothic\ NF\ 10
+		"set guifont=
+		"set printfont=
+
+	elseif kwenv =~# 'Linux_home_wsl'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 10
+		set guifont=UDEV\ Gothic\ NF\ 11
+		set printfont=UDEV\ Gothic\ NF\ 11
+
+
+	elseif kwenv =~# 'Linux_home_ubuntu'
+		"set guifont=Ricty\ Diminished\ Discord\ for\ Powerline\ 11
+		"set printfont=Ricty\ Diminished\ Discord\ for\ Powerline\ 11
+		set guifont=UDEV\ Gothic\ NF\ 11
+		set printfont=UDEV\ Gothic\ NF\ 11
+
+	else
+		"# default font
+		set guifont=MS_Gothic:h9:cSHIFTJIS
+		set printfont=MS_Gothic:h10:cSHIFTJIS
+
+	endif
+
+	"set startuip windows size
+	"autocmd GUIEnter * winsize 80 30
+endif
+
+"## linux font?
+"if has("gui_gnome")
+"	set guifont=Ricty\ 12
+"endif
+
+"## mouse wheel+ctrl font resize
+if has("gui_win32") || has("windows")
+	"nnoremap <C-MouseUp> :let &guifont = substitute(&guifont, '\d\+', '\=submatch(0)+1', '')<CR>
+	"nnoremap <C-MouseDown> :let &guifont = substitute(&guifont, '\d\+', '\=submatch(0)-1', '')<CR>
+	nnoremap <C-ScrollWheelUp> :let &guifont = substitute(&guifont, '\d\+', '\=submatch(0)+1', '')<CR>
+	nnoremap <C-ScrollWheelDown> :let &guifont = substitute(&guifont, '\d\+', '\=submatch(0)-1', '')<CR>
+else
+	"nnoremap <C-MouseUp> :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)+1', '')<CR>
+	"nnoremap <C-MouseDown> :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)-1', '')<CR>
+	nnoremap <C-ScrollWheelUp> :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)+1', '')<CR>
+	nnoremap <C-ScrollWheelDown> :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)-1', '')<CR>
+endif
+
+"}}}
+
+
+"*********************************************************************
+"* {{{ Encode/Decode things
+"
+"***** デフォルトIMオフ
+set imi=0
+set ims=0
+"***** ターミナルのエンコード
+if kwenv =~# 'Linux_home_zaurus'
+	set termencoding=euc-jp
+	"Chaliceのソースがeucjp-msっぽいのでeuc-jpだと'～'でエラーが出る
+	"->Chaliceソースのencodingをeuc-jpに変換した
+	set encoding=euc-jp
+	"set fileencoding=eucjp-ms
+elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
+	set termencoding=utf-8
+endif
+
+"***** ファイルのデフォルトエンコード
+"* BOM(byte order mark)の確認は(:set bomb?)とする
+set fileformats=unix,dos,mac
+set fileformat=unix
+set fileencodings=utf-8,euc-jp,cp932,sjis,iso-2022-jp,utf-16,ucs-bom,utf-16le,utf-16be
+"***** オープンファイルの文字コードの自動認識
+if &encoding !=# 'utf-8'
+	set encoding=japan
+	set fileencoding=japan
+endif
+if has('iconv')
+	let s:enc_euc = 'euc-jp'
+	let s:enc_jis = 'iso-2022-jp'
+	" iconvがeucJP-msに対応しているかをチェック
+	if iconv("\x87\x64\x87\x6a", 'cp932', 'eucjp-ms') ==# "\xad\xc5\xad\xcb"
+		let s:enc_euc = 'eucjp-ms'
+		let s:enc_jis = 'iso-2022-jp-3'
+	" iconvがJISX0213に対応しているかをチェック
+	elseif iconv("\x87\x64\x87\x6a", 'cp932', 'euc-jisx0213') ==# "\xad\xc5\xad\xcb"
+		let s:enc_euc = 'euc-jisx0213'
+		let s:enc_jis = 'iso-2022-jp-3'
+	endif
+	" fileencodingsを構築 (!vim can handle to save No BOM(byte order mark) as fenc now)
+	if &encoding ==# 'utf-8'
+		let s:fileencodings_default = &fileencodings
+		let &fileencodings = s:enc_jis .','. s:enc_euc .',cp932'
+		let &fileencodings = &fileencodings .','. s:fileencodings_default
+		unlet s:fileencodings_default
+	else
+		let &fileencodings = &fileencodings .','. s:enc_jis
+		set fileencodings+=utf-8,ucs-2le,ucs-2
+		if &encoding =~# '^\(euc-jp\|euc-jisx0213\|eucjp-ms\)$'
+			set fileencodings+=cp932
+			set fileencodings-=euc-jp
+			set fileencodings-=euc-jisx0213
+			set fileencodings-=eucjp-ms
+			let &encoding = s:enc_euc
+			let &fileencoding = s:enc_euc
+		else
+			let &fileencodings = &fileencodings .','. s:enc_euc
+		endif
+	endif
+	" 定数を処分
+	unlet s:enc_euc
+	unlet s:enc_jis
+endif
+" 日本語を含まない場合は fileencoding に encoding を使うようにする
+" そのままだとfugitive blameで問題がある(fugitiveblameバッファではmodifiableがfalseに設定される)のでその場合は無視
+if has('autocmd')
+	function! AU_ReCheck_FENC()
+		if &fileencoding =~# 'iso-2022-jp' && search("[^\x01-\x7e]", 'n') == 0 && &modifiable
+			let &fileencoding=&encoding
+		endif
+	endfunction
+	autocmd BufReadPost * call AU_ReCheck_FENC()
+endif
+
+"* utf-16修正 fenc=cp932強制
+"if has('autocmd')
+"    function! AU_ReCheck_FENC()
+"        if &fileencoding =~# 'iso-2022-jp' && search("[^¥x01-¥x7e]", 'n')    == 0
+"            let &fileencoding='cp932'
+"        endif
+"    endfunction
+"    autocmd BufReadPost * call AU_ReCheck_FENC()
+"endif
+"au BufReadPost * if search('¥S', 'w') == 0 | set fenc=cp932 | endif
+
+"}}}
+
+"********************************************************************
+"* {{{ other UX conf
+"*
+"# visual bell disable
+set visualbell t_vb=
+"# disable error bell beep
+set noerrorbells
+set tabstop=4
+set shiftwidth=0
+set softtabstop=-1
+set noexpandtab
+"set noautoindent
+set autoindent
+set smartindent
+set smarttab
+set nobackup
+"set noundofile
+set cursorline
+set foldcolumn=4
+
+"## brace completion (disable for coc autocompletion) -> lexima.vim
+"inoremap { {}<LEFT>
+"inoremap [ []<LEFT>
+"inoremap ( ()<LEFT>
+"inoremap " ""<LEFT>
+"inoremap ' ''<LEFT>
+"vnoremap { "zdi^V{<C-R>z}<ESC>
+"vnoremap [ "zdi^V[<C-R>z]<ESC>
+"vnoremap ( "zdi^V(<C-R>z)<ESC>
+"vnoremap " "zdi^V"<C-R>z^V"<ESC>
+"vnoremap ' "zdi'<C-R>z'<ESC>
+
+"## brace edit (vim-surround)
+"https://vimblog.hatenablog.com/entry/vim_plugin_surround_vim
+
+" 検索時にファイルの最後まで行ったら最初に戻る (nowrapscan:戻らない)
+set wrapscan
+" 括弧入力時に対応する括弧を表示 (noshowmatch:表示しない)
+set showmatch
+" コマンドライン補完するときに強化されたものを使う(参照 :help wildmenu), 保管はpopupで縦表示
+set wildmenu
+set wildoptions=pum
+"set wildmode = list:longest,full
+if !has('nvim')
+	set wildmode=longest,full
+endif
+" テキスト挿入中の自動折り返しを日本語に対応させる
+set formatoptions+=mMq
+" 自動折り返しの幅
+""set textwidth=0
+" 日本語整形スクリプト(by. 西岡拓洋さん)用の設定
+let format_allow_over_tw = 1	" ぶら下り可能幅
+
+"---------------------------------------------------------------------------
+" GUI固有ではない画面表示の設定:
+"
+" 行番号を非表示 (number:表示)
+set nonumber
+" ルーラーを表示 (noruler:非表示)
+set ruler
+" タブや改行を表示 (list:表示)
+set nolist
+" どの文字でタブや改行を表示するかを設定
+set listchars=tab:>-,extends:<,trail:-,eol:<
+" 長い行を折り返して表示 (nowrap:折り返さない)
+set wrap
+" 常にステータス行を表示 (詳細は:he laststatus)
+set laststatus=2
+" コマンドラインの高さ (Windows用gvim使用時はgvimrcを編集すること)
+set cmdheight=1
+" コマンドをステータス行に表示
+set showcmd
+" タイトルを表示
+set title
+" テーマ
+"colorscheme default
+"colorscheme evening
+"colorscheme darkblue
+"colorscheme molokai
+
+" version によってはUnicodeで行末が変になる問題対応
+" 一時的に外してみる (v9.0 2023-08-07)(ambiwidth(ambw)=single)
+"if !exists('g:vscode')
+"	set ambiwidth=double
+"endif
+" UTFtest '※' > single-1bytewidth dobule->2bytewidth
+if exists('&ambw')
+	if exists('g:vscode')
+		set ambiwidth=single
+	else
+		set ambiwidth=double
+	endif
+endif
+
+" クリップボード共有(yankも)
+set clipboard+=unnamed
+
+" debugUI
+packadd termdebug
+
+" markdown folding
+"if has('folding') && exists('g:markdown_folding')
+	let g:markdown_folding = 1
+"endif
+"}}}
+
+
+"*********************************************************************
+"** {{{ 外部コマンド
+"*
+"* jq (json parser)
+"*
+command! -nargs=? Jq call s:Jq(<f-args>)
+function! s:Jq(...)
+	if 0 == a:0
+		let l:arg = "."
+	else
+		let l:arg = a:1
+	endif
+	execute "%! jq \"" . l:arg . "\""
+endfunction
+
+"* fzf
+"}}}
+
+"*********************************************************************
+" Plugin package Manager Setup {{{
+"*********************************************************************
+"## this should be execed at head of this script"
+"set nocompatible
+"filetype off
+
+"## reset runtimepath here & add
+"set rtp& rtp+=~/.vim/bundle/Vundle.vim/
+"## simply addition
+"set rtp+=~/.vim/bundle/Vundle.vim/
+
+"## set platform custom runtime path
+" 1st, load plugin manager(rtp) andthen, plugins()
+if kwenv =~# 'Win_'
+	let s:add_rtp=&rtp.','.s:vundle_path_win
+	let s:vundle_plugin_path = s:vundle_plugin_path_win
+elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
+	let s:add_rtp=&rtp.','.s:vundle_path_unix
+	let s:vundle_plugin_path = s:vundle_plugin_path_unix
+endif
+let &rtp=s:add_rtp
+"}}}
+
+"**********************************************************************
+" {{{ vim-plug Plugin Package Manager
+" * At first, download and install pluginfile to autoload dir.
+" * unix
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+" * windows powershell
+" iwr -useb https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim |`
+"    ni $HOME/vimfiles/autoload/plug.vim -Force
+" migrated from Vundle to vim-plug (2023-08-16)
+" https://github.com/junegunn/vim-plug
+"**********************************************************************
+"## custom plugins install path
+call plug#begin(s:vundle_plugin_path)
+	"********************************************************
+	"* Add plugin below and :PlugInstall
+	"* :PlugClean for delete
+	"* :PlugUpdate for pluging update
+	"* :PlugUpgrade for vim-plug update
+	"* :PlugStatus for checkstatus
+	"* etc..
+	"***** additional colorschemes or syntax
+	Plug 'rafi/awesome-vim-colorschemes'
+	Plug 'markbahnman/vim-pico8-color'
+	Plug 'ssteinbach/vim-pico8-syntax'
+	Plug 'sainnhe/everforest'
+	Plug 'mnishz/colorscheme-preview.vim'
+	Plug 'mojako/aozora.vim'
+	Plug 'towolf/vim-helm'
+	Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
+
+    "***** legacy plugins
+	Plug 'vim-scripts/autodate.vim'
+	Plug 'vim-scripts/DrawIt'
+	Plug 'vim-scripts/dbext.vim'
+	Plug 'vim-scripts/Align'
+	Plug 'vim-scripts/SQLUtilities'
+	Plug 'cohama/lexima.vim'
+	Plug 'tpope/vim-surround'
+	Plug 'monaqa/vim-partedit'
+	"*guifont mouse wheel+ctrl zooming
+	"Plug 'vim-scripts/ttfzoom' not (working)
+
+
+	"*** modern utilities
+	Plug 'rbtnn/vim-ambiwidth'
+	Plug 'thinca/vim-quickrun'
+	"Plug 'kana/vim-smartword'
+	Plug 'lifepillar/pgsql.vim'
+	Plug 'scrooloose/nerdtree'
+	Plug 'Xuyuanp/nerdtree-git-plugin'
+	Plug 'ryanoasis/vim-devicons'
+	Plug 'lambdalisue/fern.vim'
+	Plug 'lambdalisue/nerdfont.vim'
+	Plug 'lambdalisue/fern-renderer-nerdfont.vim'
+	Plug 'lambdalisue/fern-ssh'
+	Plug 'lambdalisue/fern-bookmark.vim'
+	Plug 'lambdalisue/fern-git-status.vim'
+	Plug 'lambdalisue/fern-mapping-git.vim'
+	Plug 'yuki-yano/fern-preview.vim'
+	Plug 'airblade/vim-gitgutter'
+	Plug 'tpope/vim-fugitive'
+	Plug 'Shougo/vimproc.vim'
+	Plug 'Shougo/vimshell.vim'
+	Plug 'chrisbra/csv.vim'
+	Plug 'mechatroner/rainbow_csv'
+	Plug 'ctrlpvim/ctrlp.vim'
+	Plug 'dhruvasagar/vim-table-mode'
+	Plug 'skanehira/vsession'
+	Plug 'preservim/vim-indent-guides'
+	Plug 'voldikss/vim-floaterm'
+	"Plug 'fourjay/vim-rcs'
+	"*** fzf
+	Plug 'junegunn/fzf', {'do': { -> fzf#install() }}
+	Plug 'MattesGroeger/vim-bookmarks'
+	"*this expression is RPC version. for coc, simply use :CocInstall coc-fzf-preview
+	"Plug 'yuki-yano/fzf-preview.vim', {'branch': 'release/rpc'}
+    "Plug 'pearofducks/ansible-vim'
+    Plug 'b4b4r07/vim-ansible-vault'
+
+	"*** github copilot (from:2023-8-25) (=>need nodejs)
+	Plug 'github/copilot.vim'
+	Plug 'mattn/vim-chatgpt'
+
+	"*** Unite
+	Plug 'Shougo/unite.vim'
+	"Plug 'h1mesuke/unite-outline' #deprecated
+	Plug 'Shougo/unite-outline'
+	"Plug 'ujihisa/unite-colorscheme'
+	"* vimgo need newest version golang
+	Plug 'mattn/webapi-vim'
+	Plug 'fatih/vim-go'
+	Plug 'rust-lang/rust.vim'
+    "Plug 'vim-vdebug/vdebug'   ""has F2,F3,F4,F5,F6,F9,F10 keymap, so fern reload F5 will be conflicted
+	"* many default template
+	Plug 'mattn/vim-sonictemplate'
+	Plug 'Bakudankun/PICO-8.vim'
+
+	"*** Database Frontends
+	Plug 'tpope/vim-dadbod'
+	Plug 'kristijanhusak/vim-dadbod-ui'
+	"*vim-dadbod-completion need lua so->coc-db
+	Plug 'kristijanhusak/vim-dadbod-completion'
+
+	"*** evervim cannot work on +python3, require +python(2.X) cannot use on +python3
+	"Plug 'kakkyz81/evervim'
+
+	"*** memorizing env
+	Plug 'fuenor/qfixhowm'
+	Plug 'previm/previm'
+	"* markdown
+	Plug 'godlygeek/tabular'
+	"Plug 'plasticboy/vim-markdown' 使いにくい
+
+	"*** vim orgmode & dependencies
+	"* universal text linking
+	Plug 'vim-scripts/utl.vim'
+	"* repeat
+	Plug 'tpope/vim-repeat'
+	"* taglist (is needed ctags binary)
+	"Plug 'yegappan/taglist'
+	"* tagbar
+	Plug 'majutsushi/tagbar'
+	"* speeddating
+	Plug 'tpope/vim-speeddating'
+	"* Narrow Region
+	Plug 'chrisbra/NrrwRgn'
+	"* pathogen
+	Plug 'tpope/vim-pathogen'
+	"* calendar
+	Plug 'mattn/calendar-vim'
+	"* SyntaxRange
+	Plug 'inkarkat/vim-SyntaxRange'
+	"* org-mode
+	if !has('nvim')
+		Plug 'jceb/vim-orgmode'
+	endif
+
+	"*** internet web browse & twitter client (switched to tweetvim(<-depend on twibill.vim))
+	Plug 'yuratomo/w3m.vim'
+	Plug 'tyru/open-browser.vim'
+	"* twitter has ended for API service for users.
+	"Plug 'twitvim/twitvim'
+	"Plug 'basyura/twibill.vim'
+	"Plug 'basyura/TweetVim'
+	"Plug 'DougBeney/vim-reddit'   "reddit restricted for api access with 403
+
+	"*** translate.vim is available 8.1.1513 or upper
+	Plug 'skanehira/translate.vim'
+
+	"*** weather information
+	"Plug 'yuratomo/weather.vim' "#not work
+	"Plug 'kazukazuinaina/Weather.vim' "#not work
+	"* otenki is depend to mattn/webapi.vim
+	"Plug 'mattn/webapi-vim'
+	"Plug 'mizukmb/otenki.vim' "#not work
+	"* dep to curl or wget
+	"Plug 'skanehira/weather.vim' "#not exist now
+
+	"*** google map
+	Plug 'skanehira/google-map.vim'
+
+	"*** undo visualizer (+python2.4 is needed)
+	"Plug 'sjl/gundo.vim'
+	"*** undo visualizer newer version (+python2.4 or python3 is needed)
+	"Plug 'simnalamburt/mundo.vim'
+	"*** undo visualizer pure vimscript(nodependency)
+	Plug 'mbbill/undotree'
+
+	"*** skk input method testing (only one should be selected)
+	Plug 'tyru/skkdict.vim'
+	Plug 'tyru/eskk.vim'
+	"Plug 'tyru/skk.vim'
+
+	"*** status line themes
+	Plug 'vim-airline/vim-airline'
+	Plug 'vim-airline/vim-airline-themes'
+
+	"*** deoplete (autocompletion)
+	"# dependency => python3(+python3), pynvim
+	Plug 'Shougo/deoplete.nvim'
+	if !has('nvim')
+		Plug 'roxma/nvim-yarp'
+		Plug 'roxma/vim-hug-neovim-rpc'
+	endif
+	Plug 'Shougo/neosnippet.vim'
+	Plug 'Shougo/neosnippet-snippets'
+	"#
+	Plug 'Shougo/neoinclude.vim'
+
+	"*** coc: Conquer of Completion with LSP
+	Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+	"*** debug platform
+	Plug 'puremourning/vimspector'
+
+	"***** Nvim Only Capable plugins ******
+	if has('nvim')
+		"*** nvim-orgmode
+		Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+		Plug 'nvim-orgmode/orgmode'
+		"*** other nvim extension
+		Plug 'nvim-lua/plenary.nvim'
+		Plug 'nvim-telescope/telescope.nvim', {'tag':'0.1.4'}
+
+		"*** chatgpt
+		"*** chatgpt dependency
+		Plug 'MunifTanjim/nui.nvim'
+		Plug 'jackMort/ChatGPT.nvim'
+	endif
+
+    "*** Joplin operation
+	Plug 'tenfyzhong/joplin.vim'
+
+	"*** ACME
+	Plug 'mattn/vim-starwars'
+	Plug 'thinca/vim-scouter'
+
+call plug#end()
+filetype plugin indent on
+
+"}}}
+
+"*********************************************************************
+" {{{ Vundle Plugin Package Manager (dead current)
+"
+" * At first, download and install vundle
+" mkdir -p ~/.vim/bundle
+" git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+"**********************************************************************
+""## custom plugins install path
+"call vundle#rc(s:vundle_plugin_path)
+"call vundle#begin()
+"	"********************************************************
+"	"* Add plugin below and :VundleInstall(or :PluginInstall)
+"	"* :VundleClean for delete
+"	"*
+"	"***** Vundle plugins *****
+"	"* gmarik/vundle is older version repository
+"	"Bundle 'gmarik/vundle'
+"	Bundle 'VundleVim/Vundle.vim'
+"	"***** additional colorschemes
+"	Bundle 'rafi/awesome-vim-colorschemes'
+"	Bundle 'markbahnman/vim-pico8-color'
+"	Bundle 'ssteinbach/vim-pico8-syntax'
+"	Bundle 'sainnhe/everforest'
+"
+"	Bundle 'vim-scripts/autodate.vim'
+"	Bundle 'vim-scripts/DrawIt'
+"	Bundle 'vim-scripts/dbext.vim'
+"	Bundle 'vim-scripts/Align'
+"	Bundle 'vim-scripts/SQLUtilities'
+"	Bundle 'cohama/lexima.vim'
+"	Bundle 'tpope/vim-surround'
+"	Bundle 'monaqa/vim-partedit'
+"	"*guifont mouse wheel+ctrl zooming
+"	"Bundle 'vim-scripts/ttfzoom' not (working)
+"
+"
+"	"*** modern utilities
+"	Bundle 'lifepillar/pgsql.vim'
+"	Bundle 'scrooloose/nerdtree'
+"	Bundle 'Xuyuanp/nerdtree-git-plugin'
+"	Bundle 'ryanoasis/vim-devicons'
+"	Bundle 'lambdalisue/fern.vim'
+"	Bundle 'lambdalisue/nerdfont.vim'
+"	Bundle 'lambdalisue/fern-renderer-nerdfont.vim'
+"	Bundle 'yuki-yano/fern-preview.vim'
+"	Bundle 'lambdalisue/fern-ssh'
+"	Bundle 'lambdalisue/fern-bookmark.vim'
+"	Bundle 'lambdalisue/fern-git-status.vim'
+"	Bundle 'lambdalisue/fern-mapping-git.vim'
+"	Bundle 'airblade/vim-gitgutter'
+"	Bundle 'tpope/vim-fugitive'
+"	Bundle 'Shougo/vimproc.vim'
+"	Bundle 'Shougo/vimshell.vim'
+"	Bundle 'chrisbra/csv.vim'
+"	Bundle 'mechatroner/rainbow_csv'
+"	Bundle 'ctrlpvim/ctrlp.vim'
+"	Bundle 'dhruvasagar/vim-table-mode'
+"	Bundle 'skanehira/vsession'
+"	Bundle 'preservim/vim-indent-guides'
+"	Bundle 'voldikss/vim-floaterm'
+"	Bundle 'fourjay/vim-rcs'
+"	"*** fzf
+"	Bundle 'junegunn/fzf'
+"	Bundle 'MattesGroeger/vim-bookmarks'
+"	Bundle 'yuki-yano/fzf-preview.vim'
+"	"*** Unite
+"	Bundle 'Shougo/unite.vim'
+"	"Bundle 'h1mesuke/unite-outline' #deprecated
+"	Bundle 'Shougo/unite-outline'
+"	"* vimgo need newest version golang
+"	Bundle 'fatih/vim-go'
+"	Bundle 'rust-lang/rust.vim'
+"	"* many default template
+"	Bundle 'mattn/vim-sonictemplate'
+"	Bundle 'Bakudankun/PICO-8.vim'
+"
+"	"*** Database Frontends
+"	Bundle 'tpope/vim-dadbod'
+"	Bundle 'kristijanhusak/vim-dadbod-ui'
+"	"*vim-dadbod-completion need lua so->coc-db
+"	Bundle 'kristijanhusak/vim-dadbod-completion'
+"
+"	"*** evervim cannot work on +python3, require +python(2.X)
+"	"Bundle 'kakkyz81/evervim' cannot use on +python3
+"
+"	"*** memorizing env
+"	Bundle 'fuenor/qfixhowm'
+"	Bundle 'previm/previm'
+"	"* markdown
+"	Bundle 'godlygeek/tabular'
+"	"Bundle 'plasticboy/vim-markdown' 使いにくい
+"
+"	"*** vim orgmode & dependencies
+"	"* universal text linking
+"	Bundle 'vim-scripts/utl.vim'
+"	"* repeat
+"	Bundle 'tpope/vim-repeat'
+"	"* taglist (is needed ctags binary)
+"	"Bundle 'yegappan/taglist'
+"	"* tagbar
+"	Bundle 'majutsushi/tagbar'
+"	"* speeddating
+"	Bundle 'tpope/vim-speeddating'
+"	"* Narrow Region
+"	Bundle 'chrisbra/NrrwRgn'
+"	"* pathogen
+"	Bundle 'tpope/vim-pathogen'
+"	"* calendar
+"	Bundle 'mattn/calendar-vim'
+"	"* SyntaxRange
+"	Bundle 'inkarkat/vim-SyntaxRange'
+"	"* org-mode
+"	if !has('nvim')
+"		Bundle 'jceb/vim-orgmode'
+"	endif
+"
+"	"*** internet web browse & twitter client (switched to tweetvim(<-depend on twibill.vim))
+"	Bundle 'yuratomo/w3m.vim'
+"	Bundle 'tyru/open-browser.vim'
+"	Bundle 'twitvim/twitvim'
+"	Bundle 'basyura/twibill.vim'
+"	Bundle 'basyura/TweetVim'
+"
+"	"*** translate.vim is available 8.1.1513 or upper
+"	Bundle 'skanehira/translate.vim'
+"
+"	"*** weather information
+"	"Bundle 'yuratomo/weather.vim' "#not work
+"	"Bundle 'kazukazuinaina/Weather.vim' "#not work
+"	"* otenki is depend to mattn/webapi.vim
+"	"Bundle 'mattn/webapi-vim'
+"	"Bundle 'mizukmb/otenki.vim' "#not work
+"	"* dep to curl or wget
+"	"Bundle 'skanehira/weather.vim' "#not exist now
+"
+"	"*** google map
+"	Bundle 'skanehira/google-map.vim'
+"
+"	"*** undo visualizer (+python2.4 is needed)
+"	"Bundle 'sjl/gundo.vim'
+"	"*** undo visualizer newer version (+python2.4 or python3 is needed)
+"	"Bundle 'simnalamburt/mundo.vim'
+"	"*** undo visualizer pure vimscript(nodependency)
+"	Bundle 'mbbill/undotree'
+"
+"	"*** skk input method testing (only one should be selected)
+"	Bundle 'tyru/skkdict.vim'
+"	Bundle 'tyru/eskk.vim'
+"	"Bundle 'tyru/skk.vim'
+"
+"	"*** status line themes
+"	Bundle 'vim-airline/vim-airline'
+"	Bundle 'vim-airline/vim-airline-themes'
+"
+"	"*** deoplete (autocompletion)
+"	"# dependency => python3(+python3), pynvim
+"	Bundle 'Shougo/deoplete.nvim'
+"	if !has('nvim')
+"		Bundle 'roxma/nvim-yarp'
+"		Bundle 'roxma/vim-hug-neovim-rpc'
+"	endif
+"	Bundle 'Shougo/neosnippet.vim'
+"	Bundle 'Shougo/neosnippet-snippets'
+"	"#
+"	Bundle 'Shougo/neoinclude.vim'
+"
+"	"*** coc: Conquer of Completion with LSP
+"	Bundle 'neoclide/coc.nvim', {'branch': 'release'}
+"
+"	"***** Nvim Only Capable plugins ******
+"	if has('nvim')
+"		"*** nvim-orgmode
+"		Bundle 'nvim-treesitter/nvim-treesitter'
+"		Bundle 'nvim-orgmode/orgmode'
+"		"*** other nvim extension
+"		Bundle 'nvim-lua/plenary.nvim'
+"		Bundle 'nvim-telescope/telescope.nvim', {'tag':'0.1.2'}
+"	endif
+"
+"
+"
+"	"*** ACME
+"	Bundle "mattn/vim-starwars"
+"	Bundle "thinca/vim-scouter"
+"
+"call vundle#end()
+"filetype plugin indent on
+"
+"}}}
+
+
+"*********************************************************************
+" {{{ after common
+"-----terminal coloring
+"# enable terminal256coloring
+if !has("gui_running")
+	set t_Co=16
+	set t_Co=256
+	"set t_Co=256
+	"** set to true color (termguicolors/notermguicolors)
+	"set tgc
+endif
+
+"#sytax hilight must be read after flietype plugin completed
+syntax on
+"if &t_Co > 1
+"        syntax enable
+"endif
+
+"****************************
+"* colorscheme (depends: pugins)
+if !has('nvim')
+	"colorscheme everforest
+	"colorscheme evening
+	"colorscheme default
+elseif has('nvim')
+	set tgc
+	"colorscheme everforest
+	"colorscheme evening
+	colorscheme OceanicNext
+endif
+
+"}}}
+
+"*********************************************************************
+" {{{ Plugin Specific Configurations
+"
+"
+"*********************************************************************
+
+"******************************
+"* {{{ autodate
+"*
+let autodate_keyword_pre="last updated:"
+let autodate_keyword_post="."
+let autodate_lines=10
+let autodate_start_line=1
+let autodate_format="%Y-%m-%d %H:%M"
+"let autodate_format="%Y-%m-%d %H:%M:%S"
+"}}}
+
+"******************************
+"* {{{ DrawIt
+"
+"}}}
+
+"******************************
+"* {{{ Align
+"
+"}}}
+
+"******************************
+"* {{{ SQLUtilities
+"
+let g:sqlutil_align_comma = 1
+let g:sqlutil_align_first_word = 1
+"}}}
+
+"******************************
+"* {{{ PostgreSQL syntax
+"# set 'sql' type default to pgsql
+let g:sql_type_default = 'pgsql'
+"}}}
+
+"******************************
+"* {{{ sonic template
+"
+"** refer: h sonictemplate
+"* my customized templates
+"* subdirectory is match to buffer type name
+"* "_" is match to any type of buffer
+let g:sonictemplate_vim_template_dir = [
+						\ s:cloudstorage_home.'/MyDocuments/apps/sonictemplate',
+						\]
+let g:sonictemplate_vim_vars = {
+						\ '_': {
+						\   'author': 'Kazuki Watanabe',
+						\   'emailc': 'kwatanabe@opendoor.co.jp',
+						\   'emailp': 'getpow2@gmail.com',
+						\ },
+						\ 'c': {
+						\   'author': 'Kazuki Watanabe',
+						\   'emailc': 'kwatanabe@opendoor.co.jp',
+						\   'emailp': 'getpow2@gmail.com',
+						\ },
+						\}
+
+"}}}
+
+"******************************
+"* {{{ dbext
+"
+"# read profiles from external file
+if filereadable(expand('~/.dbext_profile'))
+	source ~/.dbext_profile
+endif
+"# change history filename
+let g:dbext_default_history_file = '~/.dbext_history'
+"# default profiles (what is integratedlogin)
+let g:dbext_default_profile_PostgreSQL_docker = 'type=PGSQL:host=ubuntu-lts:port=54312:user=postgres:passwd=postgres4318:dbname=zzzzz'
+let g:dbext_default_profile_SQLite_test = 'type=SQLITE:dbname=~/test.sqlite'
+let g:dbext_default_profile = 'PostgreSQL_docker'
+"}}}
+
+"******************************
+"* {{{ dadbod-ui
+"
+"# definitions
+let g:dbs = {
+\		'pgrx_labo_dev': 'postgresql://kwatanabe:postgres4318@localhost:28815/pgrx_labo',
+\		'pgrx_labo_ex_dev': 'postgresql://kwatanabe:postgres4318@localhost:28815/pgrx_labo_ex',
+\}
+"# db setting save
+"\		'ref_jhotel-wcache': 'postgresql://postgres:postgres4318@p-ts-waircache:5432/ref_jhotel',
+"\		'ref_jhotel-ts': 'postgresql://postgres:postgres4318@p-ts-schdb25:5432/ref_jhotel',
+"\		'zzzzz-localdocker': 'postgresql://postgres:postgres4318@ubuntu-lts:54312/zzzzz',
+"\		'airest01_access': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210602.sqlite',
+"\		'airest01_access_20210607': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210607.sqlite',
+"\		'airest01_access_20210614': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210614.sqlite',
+"\		'airest01_access_20210616': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210616.sqlite',
+"\		'airest01_access_20210617': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210617.sqlite',
+"\		'airest01_access_20210618': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210618.sqlite',
+"\		'airest01_access_20210624': 'sqlite:///home/kwatanabe/work/apachelog_analyzing/logdb_20210624.sqlite',
+let g:db_ui_save_location = expand('~/.db_ui')
+let g:db_ui_table_helpers = {
+\	'postgresql': {
+\		'Count': 'SELECT COUNT(1) FROM {table}'
+\	},
+\	'sqlite': {
+\		'Count': 'SELECT COUNT(1) FROM {table}',
+\		'Columns': 'pragma table_info(''{table}'')'
+\	}
+\}
+let g:db_ui_use_nerd_fonts = 1
+let g:db_ui_auto_execute_table_helpers = 1
+"}}}
+
+"******************************
+"* {{{ vim-ambiwidth
+" charactor independent width
+"let g:ambiwidth_add_list = [[0xfe566, 0xfe568, 2], [0xff500, 0xffd46, 2]]
+"}}}
+
+"******************************
+"* {{{ vim-smartword
+" mapping replace normal mode motion
+function! s:smartword() abort
+  map w  <Plug>(smartword-w)
+  map b  <Plug>(smartword-b)
+  map e  <Plug>(smartword-e)
+  map ge  <Plug>(smartword-ge)
+endfunction
+"}}}
+
+"******************************
+"* {{{ The NERD Tree
+"#startup shortcut (ctrl+b)
+map <C-b> :NERDTreeToggle<CR>
+"* nerdtree-git-plugin
+let g:NERDTreeGitStatusShowClean = 1
+let g:NERDTreeGitStatusConcealBrackets = 1
+"* devicons
+let g:webdevicons_enable_nerdtree = 1
+"}}}
+
+"******************************
+"* {{{ Fern fern directory
+"*
+"* for use git, current directory must have .git
+"* open that directory with fern (use bookmark etc.)& action('a' key) 'action: cd' then move to current directory
+"* help is :h fern or ?
+"nnoremap <C-q> :Fern . -reveal=% -drawer -toggle -width=40<CR>
+nnoremap <C-q> :Fern %:h -reveal=% -drawer -toggle -width=40<CR>
+let g:fern#renderer = 'nerdfont'
+let g:fern#default_hidden = 1
+
+"** fern-preview
+function! s:fern_settings() abort
+  nmap <silent> <buffer> p     <Plug>(fern-action-preview:toggle)
+  nmap <silent> <buffer> <C-p> <Plug>(fern-action-preview:auto:toggle)
+  nmap <silent> <buffer> <C-d> <Plug>(fern-action-preview:scroll:down:half)
+  nmap <silent> <buffer> <C-u> <Plug>(fern-action-preview:scroll:up:half)
+  nnoremap <Leader>q :Fern bookmark:///<CR>
+endfunction
+
+augroup fern-settings
+  autocmd!
+  autocmd FileType fern call s:fern_settings()
+augroup END
+"smart_preview
+"function! s:fern_settings() abort
+"  nmap <silent> <buffer> <expr> <Plug>(fern-quit-or-close-preview) fern_preview#smart_preview("\<Plug>(fern-action-preview:close)", ":q\<CR>")
+"  nmap <silent> <buffer> q <Plug>(fern-quit-or-close-preview)
+"endfunction
+
+"}}}
+
+"******************************
+"* {{{ gitgutter.vim
+"*
+nnoremap <Leader>gp :GitGutterPreviewHunk<CR>
+"let g:gitgutter_sign_added = '✚'
+"let g:gitgutter_sign_modified = '➜'
+"let g:gitgutter_sign_removed = '✘'
+"}}}
+
+"******************************
+"* {{{ fugitive.vim
+"*
+" for Git blame command: BufRead Error:
+" Error detected while processing function fugitive#Command[82]..function
+" fugitive#Command[75]..<SNR>219_BlameSubcomand[204]..BufRead Autocommands
+" for "*"..function AU_ReCheck_FENC:
+" E21: Cannot make chages, 'modifiable' is off
+"autocmd FileType fugitiveblame setlocal modifiable
+"}}}
+
+"******************************
+"* {{{ ansible-vault-vim
+"*
+let g:ansible_vault_password_file = '~/.vault_password'
+"}}}
+
+"******************************
+"* {{{ csv.vim
+"#auto column hilighting
+let g:csv_highlight_column = 'y'
+"}}}
+
+"******************************
+"* {{{ctrlp.vim
+"* #mode: mru as default"
+let g:ctrlp_cmd = 'CtrlPMRU'
+let g:ctrlp_use_migemo = 1
+let g:ctrlp_clear_cache_on_exit = 0   " 終了時キャッシュをクリア ->しない
+let g:ctrlp_mruf_max            = 1000 " MRUの最大記録数
+let g:ctrlp_open_new_file       = 1   " 新規ファイル作成時にタブで開く
+"}}}
+
+"******************************
+"* {{{ evervim
+"*
+"* Install files into Vim script directory.
+"*
+"* Get "Developer Tokens" from Evernote
+"* Web(https://www.evernote.com/api/DeveloperToken.action)
+"* and set g:evervim_devtoken, evervim will initialize on start VIM.
+let g:evervim_devtoken='S=s34:U=37cac0:E=1693cd48c6a:C=161e5235ee0:P=1cd:A=en-devtoken:V=2:H=05e7d0cb5e4e170089082e28962efce2'
+"}}}
+
+"******************************
+"* {{{ TwitVim
+"*
+"* do :SetLoginTwitter  first.
+"*   openssl command is needed?
+"* on wsl manual
+"let twitvim_browser_cmd = '/mnt/c/Program\ Files\ \(x86\)/Google/Chrome/Application/chrome.exe'
+"* on windows native (no open-browser)"
+"let twitvim_browser_cmd = 'c:/Program\ Files\ \(x86\)/Google/Chrome/Application/chrome.exe'
+let twitvim_force_ssl = 1
+let twitvim_count = 300
+"}}}
+
+"******************************
+"* {{{ W3m
+"*
+"let g:w3m#command = 'w3m -o ssl_verify_server=no'
+"let g:w3m#option += ' -o ssl_verify_server=no '
+let g:w3m#option = '-o ssl_verify_server=no -o display_charset=' . &encoding . ' -halfdump -o frame=true -o ext_halfdump=1 -o strict_iso2022=0 -o ucs_conv=1'
+"}}}
+
+"******************************
+"* {{{ Open-browser
+"* (can't open browser in windows)
+"### this causing can't finishing browser at vim finishing
+"## set platform custom path
+if kwenv =~# 'Win_'
+	let g:openbrowser_use_vimproc = 0
+"	let g:openbrowser_browser_commands = [
+"		\   {'name': 'rundll32.exe',
+"		\    'args': 'rundll32.exe url.dll,FileProtocolHandler {use_vimproc ? uri : uri_noesc}'}
+"	\]
+
+"elseif kwenv =~# 'Unix_' || kwenv =~ 'Linux_'
+endif
+"}}}
+
+"******************************
+"* {{{ TweetVim
+"*
+"*** number of tweets to get per one page
+let g:tweetvim_tweet_per_page = 100
+"*** number of cache
+let g:tweetvim_cache_size = 200
+"*** icon display(imagemagick is needed) if available
+if executable('convert')
+	let g:tweetvim_display_icon = 1
+endif
+"*** save setting dir
+let g:tweetvim_config_dir = expand('~/.tweetvim')
+"*** default open mode(edit/split/vsplit)
+let g:tweetvim_open_buffer_cmd = 'split'
+"*** tweet buffer open mode
+let g:tweetvim_open_say_cmd = 'botright split'
+"}}}
+
+"******************************
+"* {{{ previm
+"*
+augroup PrevimSettings
+	autocmd!
+	autocmd BufNewFile,BUfRead *.{md,mdwn,mkd,mkdn,mark*,md.txt} set filetype=markdown
+augroup END
+let g:previm_enable_realtime = 1
+let g:previm_extra_libraries = [
+\  {
+\    'name': 'katex',
+\    'files': [
+\      {
+\        'type': 'css',
+\        'path': '_/js/extra/texmath.min.css',
+\        'url': 'https://cdn.jsdelivr.net/npm/markdown-it-texmath/css/texmath.min.css',
+\      },
+\      {
+\        'type': 'css',
+\        'path': '_/css/extra/katex.min.css',
+\        'url': 'https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css',
+\        'code': [
+\          'renderMathInElement(document.body)',
+\        ],
+\      },
+\      {
+\        'type': 'js',
+\        'path': '_/js/extra/katex-auto-render.min.js',
+\        'url': 'https://cdn.jsdelivr.net/npm/katex@latest/dist/contrib/auto-render.min.js',
+\        'code': [
+\          'renderMathInElement(document.body)',
+\        ],
+\      },
+\      {
+\        'type': 'js',
+\        'path': '_/js/extra/katex.min.js',
+\        'url': 'https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js',
+\        'code': [
+\          'document.querySelectorAll(''pre code.language-katex'').forEach(elem => {',
+\          '  const html = katex.renderToString(elem.innerText, {',
+\          '    displayMode: true,',
+\          '    output: ''html'',',
+\          '    throwOnError: false,',
+\          '  })',
+\          '  const span = document.createElement(''span'')',
+\          '  span.innerHTML = html',
+\          '  elem.parentNode.replaceWith(span)',
+\          '})',
+\          'document.querySelectorAll(''.inlkatex'').forEach(elem => {',
+\          '  const html = katex.renderToString(elem.innerText, {',
+\          '    output: ''html'',',
+\          '    throwOnError: false,',
+\          '  })',
+\          '  const span = document.createElement(''span'')',
+\          '  span.innerHTML = html',
+\          '  elem.replaceWith(span)',
+\          '})',
+\        ],
+\      },
+\    ],
+\  },
+\]
+
+"}}}
+
+"******************************
+"* {{{ qfixhowm (hitori otegaru wiki modoki)
+"*
+" キーマップリーダー
+let QFixHowm_Key = 'g'
+" howm keymap quickメモ
+" <Leader>       : g,
+" g,s            : 検索
+" g,c            : メモ作成(日付ファイル名)
+" g,C            : メモ作成(任意ファイル名指定)
+" g,u            : クイックメモ(毎回同ファイル)
+" g,m            : mruリスト(qfixhowm内のファイル)
+" g,<space>      : 本日の日記を開く
+" g,j            : ペアファイルを開く
+" g,,            : qfixhowm メニューの表示
+" g,i            : qfixhowm サブメニューの表示
+"
+"* メモ関連(qfixmemo)
+"https://github.com/fuenor/qfixhowm/blob/master/doc/qfixmemo.jax
+"<Leader>i       : サブメニューを開く
+"<Leader>q       : カレンダーを開く(左側):Calendar
+"<Leader>Q       : カレンダーを開く(右側)
+":CalendarH      : カレンダーを下に開く(vim)
+"
+"* スケジュール・TODO
+"https://github.com/fuenor/qfixhowm/blob/master/doc/howm_reminder.jax
+"<Leader>y       : 予定を開く
+"<Leader>ry      : 予定更新
+"<Leader>t       : TODO
+"<Leader>tr      : TODO更新
+"<Leader>,       : メニュー
+"<Leader>r,      : メニュー更新
+"<Leader>d       : 日付の挿入(グローバル)
+"<Leader>T       : 日付と時刻の挿入(グローバル)
+"<Leader>rd      : 繰り返し予定の展開
+"
+"* 検索関連(qfixgrep)
+"https://github.com/fuenor/qfixhowm/blob/master/doc/qfixgrep.jax
+"<Leader>e       : 通常のgrep
+"<Leader>re      : 再帰検索のgrep
+"<Leader>f       : 正規表現を使わない検索
+"<Leader>rf      : 正規表現を使わない再帰検索
+"<Leader>b       : 現在開いている全てのバッファのみを対象にgrep
+"                  (無名バッファは検索できない)
+
+" howm_dirはファイルを保存したいディレクトリを設定
+"## set platform custom path
+let howm_dir             = s:cloudstorage_home.'/MyDocuments/apps/qfixhowm/howm_memo'
+let QFixHowm_MenuDir     = s:cloudstorage_home.'/MyDocuments/apps/qfixhowm/'
+"## not grep target regex
+let MyGrep_ExcludeReg = '[~#]$\|\.dll$\|\.exe$\|\.lnk$\|\.o$\|\.obj$\|\.pdf$\|\.xls$|desktop\.ini$'
+let howm_filename        = '%Y/%m/%Y-%m-%d-%H%M%S.md.txt'
+let howm_fileencoding    = 'utf-8'
+let howm_fileformat      = 'unix'
+"let QFixHowm_FileType = 'markdown'
+let QFixHowm_FileType = 'qfix_memo'
+let QFixHowm_Title = '='
+" ワイルドカードチャプターを使用する
+let QFixHowm_WildCardChapter = 1
+"チャプターのレベルに応じた折りたたみを設定する
+let QFixHowm_FoldingMode = 1
+" markdown方式の強調(乱れる場合あり)
+let g:qfixmemo_markdown_emphasis = 0
+" ,y予定に全て(リマインダ、予定、ToDo、締め切り、浮き沈みToDo)表示
+let QFixHowm_ListReminder_ScheExt = '[-@+!~]'
+" スプリットで開く
+let QFixHowm_SplitMode = 0
+" タブ編集モード('tab'を設定)
+let QFixHowm_Edit      = 'tab'
+" QFixList表示でファイルへ移動したらウィンドウを閉じる
+let QFixHowm_ListCloseOnJump = 0
+" 最近更新ファイル検索日数
+let QFixHowm_RecentDays = 14
+" メニュー画面からファイルへ移動したらウィンドウを閉じる
+let QFixHowm_MenuCloseOnJump       = 0
+" メニュー画面では常にプレビューウィンドウ表示(パカパカ鬱陶しいので)
+let QFixHowm_MenuPreview           = 1
+
+"* rigrep settings
+if executable('rg')
+" ripgrepを使う（PATHは通してある前提）
+	let mygrepprg='rg'
+" 実行時のオプションをripgrep用に変更（GNU Grepと同じ出力になるように）
+	let MyGrepcmd_useropt='-nH --no-heading --color never'
+	let MyGrepcmd_regexp=''
+	let MyGrepcmd_regexp_ignore='-i'
+	let MyGrepcmd_fix='-F'
+	let MyGrepcmd_fix_ignore='-F -i'
+	let MyGrepcmd_recursive=''
+" ripgrepにファイルパターンとして「*」「*.*」を渡したらエラーになったのでその対策
+	let MyGrep_GrepFilePattern='.'
+endif
+
+"}}}
+"
+"******************************
+"* {{{ ssk or eskk (kanji input)
+"*
+"## skk app path & skk dictionaries path
+let s:skkdic_common_path = '/MyDocuments/apps/skk'
+let s:eskk_common_path = '/MyDocuments/apps/eskk'
+if kwenv =~# 'Win_'
+	let s:skkdic_dir = s:cloudstorage_home_win  . s:skkdic_common_path
+	let s:eskk_home = s:cloudstorage_home_win  . s:eskk_common_path
+elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
+	let s:skkdic_dir = s:cloudstorage_home_unix  . s:skkdic_common_path
+	let s:eskk_home = s:cloudstorage_home_unix . s:eskk_common_path
+endif
+
+"## eskk (logfiles etc.)
+"* クラウド(Google Drive)上のpathが有効ならそれを使い、無効ならローカルに
+"* フォールバックする (クラウド優先・ローカル退避)。
+"* ローカルの読み込み専用辞書は home-manager(skkdict.nix)が
+"* ~/.SKK-JISYO.MY.LL.eucjp に配置する。
+"
+"* eskk home (log/ 等). クラウドのディレクトリが無ければ ~/.eskk を使う
+"* (ローカルが無くてもeskkが自動生成する)
+if isdirectory(expand(s:eskk_home))
+	let g:eskk#directory		= s:eskk_home
+else
+	let g:eskk#directory		= '~/.eskk'
+endif
+"* study jisyo (学習辞書)
+let s:eskk_dict_cloud = s:skkdic_dir . "/.skk-jisyo.utf8"
+if filereadable(expand(s:eskk_dict_cloud))
+	let g:eskk#dictionary		= { 'path': s:eskk_dict_cloud, 'sorted': 0, 'encoding': 'utf-8', }
+else
+	let g:eskk#dictionary		= { 'path': '~/.skk-jisyo.utf8', 'sorted': 0, 'encoding': 'utf-8', }
+endif
+"* reference only jisyo (読み込み専用辞書)
+let s:eskk_large_cloud = s:skkdic_dir . "/SKK-JISYO.MY.LL.eucjp"
+if filereadable(expand(s:eskk_large_cloud))
+	let g:eskk#large_dictionary	= { 'path': s:eskk_large_cloud, 'sorted': 1, 'encoding': 'eucjp', }
+else
+	let g:eskk#large_dictionary	= { 'path': '~/.SKK-JISYO.MY.LL.eucjp', 'sorted': 1, 'encoding': 'eucjp', }
+endif
+"* neocompleteが入っていれば自動補完が効くが、通常のomni補完を利用しているので、手動でも<C-x><C-o>で利用は可能
+let g:eskk#enable_completion	= 1
+let g:eskk#show_annotation		= 1
+"* 辞書を自動保存する単語の登録数:辞書ファイルがクラウド経由の際はブロックが発生するので
+"* 多めに取っておいた方が快適 (defaultは-1(毎回保存)である)
+let g:eskk#dictionary_save_count	= 50
+
+""## original skk.vim
+"let skk_jisyo			= s:skkdic_dir . "/.skk-jisyo"
+""# standard L
+""let skk_large_jisyo	= s:skkdic_dir . "/SKK-JISYO.L"
+""# more bigger
+"let skk_large_jisyo		= s:skkdic_dir . "/SKK-JISYO.MY.L"
+"let skk_show_annotation = 1
+"}}}
+
+
+"******************************
+"* {{{ vim-go
+"*
+
+"}}}
+
+"******************************
+"* {{{ rust.vim
+"*
+let g:rustfmt_autosave = 1
+
+"}}}"
+
+"******************************
+"* {{{ vdebug.vim
+"*
+if !exists('g:vdebug_options')
+	let g:vdebug_options = {}
+	let g:vdebug_options.server = 0.0.0.0
+	"let g:vdebug_options.server = 172.21.192.1
+	let g:vdebug_options.port = 9003
+	let g:vdebug_options.break_on_open = 0
+	let g:vdebug_options.sign_disabled = 0
+	let g:vdebug_options.on_close = 'detach'
+	let g:vdebug_options.ide_key = ''
+	let g:vdebug_options.path_maps = {
+		\ '/var/www/webapp': '/develop_k8d/sample-fe-phpfpm/webapp'
+		\ }
+		"\ '/var/www/webapp': '/develop_k8d/k8s-smplapp-otel/webapp'
+		"\ '/var/www/webapp': '/develop_k3d/k8s-smplapp-otel/webapp'
+		"\ '/var/www/webapp': '//wsl.localhost/Ubuntu-22.04/develop_k3d/k8s-smplapp-otel/webapp'
+endif
+"}}}
+
+
+"******************************
+"* {{{ airline status themes
+"*
+" UTFtest '※' > single-1bytewidth dobule->2bytewidth
+if exists('&ambw')
+	if exists('g:vscode')
+		set ambiwidth=single
+	else
+		set ambiwidth=double
+	endif
+endif
+"*default section system
+"| A | B |                     C                            X | Y | Z |  [...] |
+let g:airline_theme = 'light'
+"let g:airline_theme = 'wombat'
+"let g:airline_section_b = airline#section#create(['branch','hunks']) . '%{strftime("%c")}'
+"let g:airline_section_b = airline#section#create(['branch','hunks'])
+if has('nvim')
+	let g:airline#extensions#tabline#enabled = 1
+else
+	let g:airline#extensions#tabline#enabled = 0
+endif
+let g:airline#extensions#tabline#buffer_idx_mode = 1
+let g:airline#extensions#whitespace#mixed_indent_algo = 1
+let g:airline#extensions#branch#enabled = 1
+let g:airline#extensions#branch#format = 2
+let g:airline#extensions#hunks#enabled = 1
+let g:airline#extensions#battery#enabled = 1
+" fern extension causes error with fern-bookmars, temporarily disabled(2025-03-12)
+let g:airline#extensions#fern#enabled = 0
+let g:airline#extensions#nerdtree_statusline = 1
+let g:airline#extensions#nrrwrgn#enabled = 1
+let g:airline#extensions#coc#enabled = 1
+let g:airline#extensions#fzf#enabled = 1
+let g:airline#extensions#fugitiveline#enabled = 1
+if !has("gui_running") && !has('nvim')
+	let g:airline_powerline_fonts = 0
+else
+	let g:airline_powerline_fonts = 1
+endif
+
+"unicode symbols
+"if !exists('g:airline_symbols')
+"	let g:airline_symbols = {}
+"endif
+"let g:airline_left_sep = '»'
+"let g:airline_left_sep = '▶'
+"let g:airline_right_sep = '«'
+"let g:airline_right_sep = '◀'
+"let g:airline_symbols.crypt = '🔒'
+"let g:airline_symbols.linenr = '␊'
+"let g:airline_symbols.linenr = '␤'
+"let g:airline_symbols.linenr = '¶'
+"let g:airline_symbols.maxlinenr = '☰'
+"let g:airline_symbols.maxlinenr = ''
+"let g:airline_symbols.branch = '⎇'
+"let g:airline_symbols.paste = 'ρ'
+"let g:airline_symbols.paste = 'Þ'
+"let g:airline_symbols.paste = '∥'
+"let g:airline_symbols.spell = 'Ꞩ'
+"let g:airline_symbols.notexists = '∄'
+"let g:airline_symbols.whitespace = 'Ξ'
+
+" powerline symbols
+"let g:airline_left_sep = ''
+"let g:airline_left_alt_sep = ''
+"let g:airline_right_sep = ''
+"let g:airline_right_alt_sep = ''
+"let g:airline_symbols.branch = ''
+"let g:airline_symbols.readonly = ''
+"let g:airline_symbols.linenr = ''
+
+"* for eskk-mode
+let g:airline_section_y = '%{eskk#statusline()}' .  'BN:%{bufnr("%")} ' . '%{airline#util#wrap(airline#parts#ffenc(),0)}'
+
+"}}}
+
+"******************************
+"* {{{ deoplete autocompletion frontend
+"*   and neosnippet.vim
+"*
+"*  for temprary use
+"*    swith use `call/echo deoplete#enable() / deoplete#disable()` / deopete#toggle()
+let g:deoplete#enable_at_startup = 0
+let deoplete#tag#cache_limit_size = 20000000
+call deoplete#custom#option({
+		\ 'auto_complete_delay': 10,
+		\ 'auto_refresh_delay': 100,
+		\ 'min_pattern_length': 2,
+		\ 'smart_case': v:true,
+		\ 'candidate_marks': ['A', 'S', 'D', 'F', 'G'],
+		\ 'max_list': 10000,
+		\ 'num_processes': 3,
+		\})
+"# completion shortcuts
+"inoremap <expr>A       pumvisible() ?
+"	\ deoplete#insert_candidate(0) : 'A'
+"inoremap <expr>S       pumvisible() ?
+"	\ deoplete#insert_candidate(1) : 'S'
+"inoremap <expr>D       pumvisible() ?
+"	\ deoplete#insert_candidate(2) : 'D'
+"inoremap <expr>F       pumvisible() ?
+"	\ deoplete#insert_candidate(3) : 'F'
+"inoremap <expr>G       pumvisible() ?
+"	\ deoplete#insert_candidate(4) : 'G'
+""# <tab> move
+"inoremap <expr><tab> pumvisible() ? "\<C-n>" :
+"	\ neosnippet#expandable_or_jumpable() ?
+"	\    "\<Plug>(neosnippet_expand_or_jump)" : "\<tab>"
+
+"# for tag completeion
+call deoplete#custom#option('sources', {
+	\ '_': [],
+	\})
+
+"******************************
+"* {{{ auto compleation with snippets
+"*
+"# Plugin key-mappings.
+"# Note: It must be "imap" and "smap".  It uses <Plug> mappings.
+""imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+""smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+""xmap <C-k>     <Plug>(neosnippet_expand_target)
+""
+"""# SuperTab like snippets behavior.
+""" Note: It must be "imap" and "smap".  It uses <Plug> mappings.
+""imap <expr><TAB>
+	""\ pumvisible() ? "\<C-n>" :
+	""\ neosnippet#expandable_or_jumpable() ?
+	""\    "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+""smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+""\ "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+""
+""
+"""# For conceal markers.
+""if has('conceal')
+	""set conceallevel=2 concealcursor=niv
+""endif
+"}}}
+"}}}
+
+"******************************
+"* {{{ coc.nvim
+"* Conquer of Completion
+" Make <CR> auto-select the first completion item and notify coc.nvim to
+" format on enter, <cr> could be remapped by other vim plugin
+"** <CR>navigation
+""inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+""	\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+"** <tab> navigation
+"
+"inoremap <silent><expr> <TAB>
+"  \ pumvisible() ? coc#_select_confirm() :
+"  \ coc#expandableOrJumpable() ?
+"  \ "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
+"  \ <SID>check_back_space() ? "\<TAB>" :
+"  \ coc#refresh()
+"
+inoremap <silent><expr> <TAB>
+  \ coc#pum#visible() ? coc#pum#next(1):
+  \ CheckBackspace() ? "\<Tab>" :
+  \ coc#refresh()
+inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+" Make <CR> auto-select the first completion item and notfify coc.nvim to
+" format <C-g>u breaks current undo, plese make your own choice.
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+		\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" Use <c-space> to trigger completion
+if has('nvim')
+	inoremap <silent><expr> <c-space> coc#refresh()
+else
+	inoremap <silent><expr> <c-@> coc#refresh()
+endif
+
+
+"let g:coc_snippet_next = '<tab>'
+
+" GoTo code navigation.
+"** go back is <C-o>
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gr <Plug>(coc-references)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gf <Plug>(coc-format)
+nmap <silent> grn <Plug>(coc-rename)
+nmap <silent> gh :<C-u>call CocAction('doHover')<cr>
+
+" Use K to show documentation in preview window
+nnoremap <silent> K :call ShowDocumentation()<CR>
+
+function! ShowDocumentation()
+	if CocAction('hasProvider', 'hover')
+		call CocActionAsync('doHover')
+	else
+		call feedkeys('K', 'in')
+	endif
+endfunction
+
+" Highlight the symbol and its references when holding the cursor.
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+"** policy set to .clang-format
+"
+"BasedOnStyle: 'Google'
+"BreakBeforeBraces: 'Allman'
+"IndentWidth: 4
+"AlignConsecutiveAssignments: true
+"AlignTrailingComments: true
+"
+"}}}
+"
+"******************************
+"* {{{ for @yaegassy/coc-ansible
+"*
+let g:coc_filetype_map = {
+  \ 'yaml.ansible': 'ansible',
+  \ }
+"}}}
+
+
+"******************************
+"* {{{ vimspector
+"*
+"let g:vimspector_configurations=
+let g:vimspector_enable_mappings = 'HUMAN'
+let g:vimspector_base_dir = expand('$HOME/.vim/vimspector-config')
+nnoremap <Leader>dd :call vimspector#Launch()<CR>
+nnoremap <Leader>de :call vimspector#Reset()<CR>
+nnoremap <Leader>dc :call vimspector#Continue()<CR>
+
+nnoremap <Leader>dt :call vimspector#ToggleBreakpoint()<CR>
+nnoremap <Leader>dT :call vimspector#ClearBreakpoints()<CR>
+
+nmap <Leader>dk <Plug>VimspectorRestart
+nmap <Leader>dh <Plug>VimspectorStepOut
+nmap <Leader>dl <Plug>VimspectorStepInto
+nmap <Leader>dj <Plug>VimspectorStepOver
+
+nmap <Leader>db <Plug>VimspectorBreakpoints
+"}}}
+
+
+"******************************
+"* {{{ vsession session manager
+"*
+let g:vsesion_save_last_on_leave = 1
+"* allowed value is 'quickpick(default)' or 'fzf' or 'popup' or 'input'
+let g:vsession_ui = 'popup'
+"}}}
+
+"******************************
+"* {{{ unite-outline
+"*
+"  open vertical & stay
+let g:unite_enable_split_vertically = 1
+let g:unite_winwidth = 32
+"let g:unite_winheighy = 10
+let g:unite_split_rule = "rightbelow"
+"let g:unite_split_rule = "topleft"
+nnoremap <silent> <Leader>uo :<C-u>Unite -vertical -winwidth=35 -no-quit outline<CR>
+"nnoremap <silent> <Leader>uo :<C-u>Unite -no-quit outline<CR>
+"}}}
+
+"******************************
+"* {{{ fzf
+"* https://github.com/junegunn/fzf
+"* install fzf binary & add to PATH
+"* git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+"* ~/.fzf/install or :call fzf#install()
+"}}}
+
+"******************************
+"* {{{ fzf-preview
+"* https://github.com/yuki-yano/fzf-preview.vim
+"* optional: CocInstall coc-fzf-preview
+"
+"{{{ default settings
+"	nmap <Leader>f [fzf-p]
+"	xmap <Leader>f [fzf-p]
+"
+"	"***** vim RPC
+"	"nnoremap <silent> [fzf-p]p	 :<C-u>FzfPreviewFromResourcesRpc project_mru git<CR>
+"	"nnoremap <silent> [fzf-p]gs	:<C-u>FzfPreviewGitStatusRpc<CR>
+"	"nnoremap <silent> [fzf-p]ga	:<C-u>FzfPreviewGitActionsRpc<CR>
+"	"nnoremap <silent> [fzf-p]b	 :<C-u>FzfPreviewBuffersRpc<CR>
+"	"nnoremap <silent> [fzf-p]B	 :<C-u>FzfPreviewAllBuffersRpc<CR>
+"	"nnoremap <silent> [fzf-p]o	 :<C-u>FzfPreviewFromResourcesRpc buffer project_mru<CR>
+"	"nnoremap <silent> [fzf-p]<C-o> :<C-u>FzfPreviewJumpsRpc<CR>
+"	"nnoremap <silent> [fzf-p]g;	:<C-u>FzfPreviewChangesRpc<CR>
+"	"nnoremap <silent> [fzf-p]/	 :<C-u>FzfPreviewLinesRpc --add-fzf-arg=--no-sort --add-fzf-arg=--query="'"<CR>
+"	"nnoremap <silent> [fzf-p]*	 :<C-u>FzfPreviewLinesRpc --add-fzf-arg=--no-sort --add-fzf-arg=--query="'<C-r>=expand('<cword>')<CR>"<CR>
+"	"nnoremap		  [fzf-p]gr	:<C-u>FzfPreviewProjectGrepRpc<Space>
+"	"xnoremap		  [fzf-p]gr	"sy:FzfPreviewProjectGrepRpc<Space>-F<Space>"<C-r>=substitute(substitute(@s, '\n', '', 'g'), '/', '\\/', 'g')<CR>"
+"	"nnoremap <silent> [fzf-p]t	 :<C-u>FzfPreviewBufferTagsRpc<CR>
+"	"nnoremap <silent> [fzf-p]q	 :<C-u>FzfPreviewQuickFixRpc<CR>
+"	"nnoremap <silent> [fzf-p]l	 :<C-u>FzfPreviewLocationListRpc<CR>
+"
+"	"***** with coc plugin coc-fzf-preview
+"	nnoremap <silent> [fzf-p]p	 :<C-u>CocCommand fzf-preview.FromResources project_mru git<CR>
+"	nnoremap <silent> [fzf-p]gs	:<C-u>CocCommand fzf-preview.GitStatus<CR>
+"	nnoremap <silent> [fzf-p]ga	:<C-u>CocCommand fzf-preview.GitActions<CR>
+"	nnoremap <silent> [fzf-p]b	 :<C-u>CocCommand fzf-preview.Buffers<CR>
+"	nnoremap <silent> [fzf-p]B	 :<C-u>CocCommand fzf-preview.AllBuffers<CR>
+"	nnoremap <silent> [fzf-p]o	 :<C-u>CocCommand fzf-preview.FromResources buffer project_mru<CR>
+"	nnoremap <silent> [fzf-p]<C-o> :<C-u>CocCommand fzf-preview.Jumps<CR>
+"	nnoremap <silent> [fzf-p]g;	:<C-u>CocCommand fzf-preview.Changes<CR>
+"	nnoremap <silent> [fzf-p]/	 :<C-u>CocCommand fzf-preview.Lines --add-fzf-arg=--no-sort --add-fzf-arg=--query="'"<CR>
+"	nnoremap <silent> [fzf-p]*	 :<C-u>CocCommand fzf-preview.Lines --add-fzf-arg=--no-sort --add-fzf-arg=--query="'<C-r>=expand('<cword>')<CR>"<CR>
+"	nnoremap		  [fzf-p]gr	:<C-u>CocCommand fzf-preview.ProjectGrep<Space>
+"	xnoremap		  [fzf-p]gr	"sy:CocCommand   fzf-preview.ProjectGrep<Space>-F<Space>"<C-r>=substitute(substitute(@s, '\n', '', 'g'), '/', '\\/', 'g')<CR>"
+"	nnoremap <silent> [fzf-p]t	 :<C-u>CocCommand fzf-preview.BufferTags<CR>
+"	nnoremap <silent> [fzf-p]q	 :<C-u>CocCommand fzf-preview.QuickFix<CR>
+"	nnoremap <silent> [fzf-p]l	 :<C-u>CocCommand fzf-preview.LocationList<CR>
+"
+"	"**** default settings
+"	" floating window size ratio
+"	let g:fzf_preview_floating_window_rate = 0.9
+"	" fzf window position settings
+"	let g:fzf_preview_direct_window_option = ''
+"	" fzf command default options
+"	let g:fzf_preview_default_fzf_options = { '--reverse': v:true, '--preview-window': 'wrap' }
+"	" Add fzf quit mapping
+"	let g:fzf_preview_quit_map = 1
+"	" jump to the buffers by default, when possible
+"	let g:fzf_preview_buffers_jump = 0
+"	" Commands used for fzf preview.
+"	" The file name selected by fzf becomes {}
+"	let g:fzf_preview_command = 'cat'							   " Not installed bat
+"	" let g:fzf_preview_command = 'bat --color=always --plain {-1}' " Installed bat
+"	" g:fzf_binary_preview_command is executed if this command succeeds, and g:fzf_preview_command is executed if it fails
+"	let g:fzf_preview_if_binary_command = '[[ "$(file --mime {})" =~ binary ]]'
+"	" Commands used for binary file
+"	let g:fzf_binary_preview_command = 'echo "{} is a binary file"'
+"	" Commands used to get the file list from project
+"	let g:fzf_preview_filelist_command = 'git ls-files --exclude-standard'			   " Not Installed ripgrep
+"	" let g:fzf_preview_filelist_command = 'rg --files --hidden --follow --no-messages -g \!"* *"' " Installed ripgrep
+"	" Commands used to get the file list from git repository
+"	let g:fzf_preview_git_files_command = 'git ls-files --exclude-standard'
+"	" Commands used to get the file list from current directory
+"	let g:fzf_preview_directory_files_command = 'rg --files --hidden --follow --no-messages -g \!"* *"'
+"	" Commands used to get the git status file list
+"	let g:fzf_preview_git_status_command = 'git -c color.status=always status --short --untracked-files=all'
+"	" Commands used for git status preview.
+"	let g:fzf_preview_git_status_preview_command =  "[[ $(git diff --cached -- {-1}) != \"\" ]] && git diff --cached --color=always -- {-1} || " .
+"				\ "[[ $(git diff -- {-1}) != \"\" ]] && git diff --color=always -- {-1} || " .
+"				\ g:fzf_preview_command
+"
+"	" Commands used for project grep
+"	let g:fzf_preview_grep_cmd = 'rg --line-number --no-heading --color=never --hidden'
+"	" MRU and MRW cache directory
+"	let g:fzf_preview_cache_directory = expand('~/.cache/vim/fzf_preview')
+"	" If this value is not 0, disable mru and mrw
+"	let g:fzf_preview_disable_mru = 0
+"	" Limit of the number of files to be saved by mru
+"	let g:fzf_preview_mru_limit = 1000
+"
+"	" Commands used for current file lines
+"	let g:fzf_preview_lines_command = 'cat -n'								" Not Installed bat
+"	" let g:fzf_preview_lines_command = 'bat --color=always --plain --number' " Installed bat
+"	" Commands used for preview of the grep result
+"	let g:fzf_preview_grep_preview_cmd = expand('<sfile>:h:h') . '/bin/preview_fzf_grep'
+"	" Cache directory for mru and mrw
+"	let g:fzf_preview_cache_directory = expand('~/.cache/vim/fzf_preview')
+"
+"	" Keyboard shortcuts while fzf preview is active
+"	let g:fzf_preview_preview_key_bindings = ''
+"	" let g:fzf_preview_preview_key_bindings = 'ctrl-d:preview-page-down,ctrl-u:preview-page-up,?:toggle-preview'
+"	" Specify the color of fzf
+"	let g:fzf_preview_fzf_color_option = ''
+"	" Set the processes when selecting an element with fzf
+"	let g:fzf_preview_custom_processes = {}
+"	" For example, set split to ctrl-s
+"	" let g:fzf_preview_custom_processes['open-file'] = fzf_preview#remote#process#get_default_processes('open-file')
+"	" on coc extensions
+"	" let g:fzf_preview_custom_processes['open-file'] = fzf_preview#remote#process#get_default_processes('open-file', 'coc')
+"	" let g:fzf_preview_custom_processes['open-file']['ctrl-s'] = g:fzf_preview_custom_processes['open-file']['ctrl-x']
+"	" call remove(g:fzf_preview_custom_processes['open-file'], 'ctrl-x')
+"
+"	" Use as fzf preview-window option
+"	let g:fzf_preview_fzf_preview_window_option = ''
+"	" let g:fzf_preview_fzf_preview_window_option = 'up:30%'
+"	" Use vim-devicons
+"	let g:fzf_preview_use_dev_icons = 1
+"	" Use fzf history option
+"	"let g:fzf_preview_history_dir = false
+"	let g:fzf_preview_history_dir = '~/.fzf'
+"
+"	" devicons character width
+"	let g:fzf_preview_dev_icon_prefix_string_length = 3
+"
+"	" Devicons can make fzf-preview slow when the number of results is high
+"	" By default icons are disable when number of results is higher that 5000
+"	let g:fzf_preview_dev_icons_limit = 5000
+"
+"	" The theme used in the bat preview
+"	let $FZF_PREVIEW_PREVIEW_BAT_THEME = 'OneHalfDark'
+"	"let $FZF_PREVIEW_PREVIEW_BAT_THEME = 'gruvbox'
+"}}}
+
+"--- commiter's settings
+let g:fzf_preview_git_files_command   = 'git ls-files --exclude-standard | while read line; do if [[ ! -L $line ]] && [[ -f $line ]]; then echo $line; fi; done'
+if executable('rg')
+	let g:fzf_preview_grep_cmd            = 'rg --line-number --no-heading --color=never --sort=path'
+endif
+let g:fzf_preview_mru_limit           = 500
+let g:fzf_preview_use_dev_icons       = 1
+let g:fzf_preview_default_fzf_options = {
+\ '--reverse': v:true,
+\ '--preview-window': 'wrap',
+\ '--exact': v:true,
+\ '--no-sort': v:true,
+\ }
+"let $FZF_PREVIEW_PREVIEW_BAT_THEME  = 'gruvbox'
+let $FZF_PREVIEW_PREVIEW_BAT_THEME  = 'OneHalfDark'
+
+noremap <fzf-p> <Nop>
+map     ;       <fzf-p>
+noremap ;;      ;
+noremap <dev>   <Nop>
+map     fp       <dev>
+
+nnoremap <silent> <fzf-p>r     :<C-u>CocCommand fzf-preview.FromResources buffer project_mru<CR>
+nnoremap <silent> <fzf-p>w     :<C-u>CocCommand fzf-preview.ProjectMrwFiles<CR>
+nnoremap <silent> <fzf-p>a     :<C-u>CocCommand fzf-preview.FromResources project_mru git<CR>
+nnoremap <silent> <fzf-p>g     :<C-u>CocCommand fzf-preview.GitActions<CR>
+nnoremap <silent> <fzf-p>s     :<C-u>CocCommand fzf-preview.GitStatus<CR>
+nnoremap <silent> <fzf-p>gf    :<C-u>CocCommand fzf-preview.GitFiles<CR>
+nnoremap <silent> <fzf-p>b     :<C-u>CocCommand fzf-preview.Buffers<CR>
+nnoremap <silent> <fzf-p>B     :<C-u>CocCommand fzf-preview.AllBuffers<CR>
+nnoremap <silent> <fzf-p><C-o> :<C-u>CocCommand fzf-preview.Jumps<CR>
+nnoremap <silent> <fzf-p>g;    :<C-u>CocCommand fzf-preview.Changes<CR>
+nnoremap <silent> <fzf-p>/     :<C-u>CocCommand fzf-preview.Lines --resume --add-fzf-arg=--no-sort<CR>
+nnoremap <silent> <fzf-p>*     :<C-u>CocCommand fzf-preview.Lines --add-fzf-arg=--no-sort --add-fzf-arg=--query="<C-r>=expand('<cword>')<CR>"<CR>
+xnoremap <silent> <fzf-p>*     "sy:CocCommand fzf-preview.Lines --add-fzf-arg=--no-sort --add-fzf-arg=--query="<C-r>=substitute(@s, '\(^\\v\)\\|\\\(<\\|>\)', '', 'g')<CR>"<CR>
+nnoremap <silent> <fzf-p>n     :<C-u>CocCommand fzf-preview.Lines --add-fzf-arg=--no-sort --add-fzf-arg=--query="<C-r>=substitute(@/, '\(^\\v\)\\|\\\(<\\|>\)', '', 'g')<CR>"<CR>
+nnoremap <silent> <fzf-p>?     :<C-u>CocCommand fzf-preview.BufferLines --resume --add-fzf-arg=--no-sort<CR>
+nnoremap <silent> <fzf-p>0     :<C-u>CocCommand fzf-preview.DirectoryFiles --resume --add-fzf-arg=--no-sort<CR>
+nnoremap          <fzf-p>f     :<C-u>CocCommand fzf-preview.ProjectGrep<Space>
+xnoremap          <fzf-p>f     "sy:CocCommand fzf-preview.ProjectGrep<Space>-F<Space>"<C-r>=substitute(substitute(@s, '\n', '', 'g'), '/', '\\/', 'g')<CR>"
+nnoremap <silent> <fzf-p>q     :<C-u>CocCommand fzf-preview.QuickFix<CR>
+nnoremap <silent> <fzf-p>l     :<C-u>CocCommand fzf-preview.LocationList<CR>
+nnoremap <silent> <fzf-p>:     :<C-u>CocCommand fzf-preview.CommandPalette<CR>
+nnoremap <silent> <fzf-p>p     :<C-u>CocCommand fzf-preview.Yankround<CR>
+nnoremap <silent> <fzf-p>m     :<C-u>CocCommand fzf-preview.Bookmarks --resume<CR>
+nnoremap <silent> <fzf-p><C-]> :<C-u>CocCommand fzf-preview.VistaCtags --add-fzf-arg=--query="<C-r>=expand('<cword>')<CR>"<CR>
+nnoremap <silent> <fzf-p>o     :<C-u>CocCommand fzf-preview.VistaBufferCtags<CR>
+
+nnoremap <silent> <dev>q  :<C-u>CocCommand fzf-preview.CocCurrentDiagnostics<CR>
+nnoremap <silent> <dev>Q  :<C-u>CocCommand fzf-preview.CocDiagnostics<CR>
+nnoremap <silent> <dev>rf :<C-u>CocCommand fzf-preview.CocReferences<CR>
+nnoremap <silent> <dev>t  :<C-u>CocCommand fzf-preview.CocTypeDefinitions<CR>
+
+"AutoCmd User fzf_preview#initialized call s:fzf_preview_settings()
+autocmd User fzf_preview#initialized call s:fzf_preview_settings()
+
+function! s:buffers_delete_from_lines(lines) abort
+  for line in a:lines
+    let matches = matchlist(line, '\[\(\d\+\)\]')
+    if len(matches) >= 1
+      execute 'Bdelete! ' . matches[1]
+    endif
+  endfor
+endfunction
+
+function! s:fzf_preview_settings() abort
+  " Commands used for fzf preview.
+  " The file name selected by fzf becomes {}
+  let g:fzf_preview_floating_window_rate = 0.8
+  "* if cargo is available, install bat command with 'cargo install --locked bat'
+  "* windows binary also avilable here https://github.com/sharkdp/bat/releases/tag/v0.23.0
+  if executable('bat')
+    let g:fzf_preview_command = 'bat --color=always --plain {-1}' " Installed bat
+  else
+    let g:fzf_preview_command = 'cat'                               " Not installed bat
+  endif
+  let g:fzf_preview_command = 'COLORTERM=truecolor ' . g:fzf_preview_command
+
+  " Cache directory for mru and mrw
+  let g:fzf_preview_cache_directory = expand('~/.cache/vim/fzf_preview')
+  " Commands used for project grep
+  let g:fzf_preview_grep_cmd = 'rg --line-number --no-heading --color=never --hidden'
+  " Commands used for preview of the grep result
+  let g:fzf_preview_grep_preview_cmd = expand('<sfile>:h:h') . '/bin/preview_fzf_grep'
+  let g:fzf_preview_grep_preview_cmd = 'COLORTERM=truecolor ' . g:fzf_preview_grep_preview_cmd
+
+  let g:fzf_preview_custom_processes['open-file'] = fzf_preview#remote#process#get_default_processes('open-file', 'coc')
+  let g:fzf_preview_custom_processes['open-file']['ctrl-s'] = g:fzf_preview_custom_processes['open-file']['ctrl-x']
+  call remove(g:fzf_preview_custom_processes['open-file'], 'ctrl-x')
+
+  let g:fzf_preview_custom_processes['open-buffer'] = fzf_preview#remote#process#get_default_processes('open-buffer', 'coc')
+  let g:fzf_preview_custom_processes['open-buffer']['ctrl-s'] = g:fzf_preview_custom_processes['open-buffer']['ctrl-x']
+  call remove(g:fzf_preview_custom_processes['open-buffer'], 'ctrl-q')
+  let g:fzf_preview_custom_processes['open-buffer']['ctrl-x'] = get(function('s:buffers_delete_from_lines'), 'name')
+
+  let g:fzf_preview_custom_processes['open-bufnr'] = fzf_preview#remote#process#get_default_processes('open-bufnr', 'coc')
+  let g:fzf_preview_custom_processes['open-bufnr']['ctrl-s'] = g:fzf_preview_custom_processes['open-bufnr']['ctrl-x']
+  call remove(g:fzf_preview_custom_processes['open-bufnr'], 'ctrl-q')
+  let g:fzf_preview_custom_processes['open-bufnr']['ctrl-x'] = get(function('s:buffers_delete_from_lines'), 'name')
+
+  let g:fzf_preview_custom_processes['git-status'] = fzf_preview#remote#process#get_default_processes('git-status', 'coc')
+  let g:fzf_preview_custom_processes['git-status']['ctrl-s'] = g:fzf_preview_custom_processes['git-status']['ctrl-x']
+  call remove(g:fzf_preview_custom_processes['git-status'], 'ctrl-x')
+endfunction
+"}}}
+
+
+"******************************
+"* {{{ vim-bookmark
+"*
+let g:bookmark_auto_save = 1
+"* for avoid nerdtree keymap conflict
+let g:bookmark_no_default_key_mappings = 1
+function! BookmarkMapKeys()
+    nmap mm :BookmarkToggle<CR>
+    nmap mi :BookmarkAnnotate<CR>
+    nmap mn :BookmarkNext<CR>
+    nmap mp :BookmarkPrev<CR>
+    nmap ma :BookmarkShowAll<CR>
+    nmap mc :BookmarkClear<CR>
+    nmap mr :BookmarkClearAll<CR>
+    nmap mkk :BookmarkMoveUp
+    nmap mjj :BookmarkMoveDown
+endfunction
+function! BookmarkUnmapKeys()
+    unmap mm
+    unmap mi
+    unmap mn
+    unmap mp
+    unmap ma
+    unmap mc
+    unmap mr
+    unmap mkk
+    unmap mjj
+endfunction
+autocmd BufEnter * :call BookmarkMapKeys()
+autocmd BufEnter NERD_tree_* :call BookmarkUnmapKeys()
+"* for unite integration
+call unite#custom#profile('source/vim_bookmarks', 'context', {
+	\   'winheight': 13,
+	\   'direction': 'botright',
+	\   'start_insert': 0,
+	\   'keep_focus': 1,
+	\   'no_quit': 1,
+	\ })
+"}}}
+
+
+"******************************
+"* {{{ vim-indent-guides
+"*
+let g:indent_guides_guide_size = 1
+"}}}
+
+
+"******************************
+"* {{{ vim-floaterm
+" key maps
+"let g:floaterm_keymap_new = '<Leader>ftn'
+let g:floaterm_keymap_new = '<Leader>ft'
+let g:floaterm_keymap_toggle = '<Leader>ftt'
+let g:floaterm_keymap_prev = '<Leader>ftp'
+let g:floaterm_keymap_next = '<Leader>ftn'
+let g:floaterm_keymap_kill = '<Leader>ftk'
+" bg color
+hi Floaterm guibg=white
+" window size
+let g:floaterm_width = 0.75
+let g:floaterm_height = 0.85
+"}}}
+
+"******************************
+"* {{{ copilot.vim
+"*
+"** accept-line map to C-J -> race with eskk, so reverted to default keymap
+let g:copilot_no_tab_map = v:false
+"imap <silent><script><expr> <C-J> copilot#Accept("\<CR>")
+"** accept-work default map to M-Right
+let g:copilot_filetypes = #{
+  \   gitcommit: v:true,
+  \   markdown: v:true,
+  \   text: v:true,
+  \   toml: v:true,
+  \   yaml: v:true,
+  \   json: v:true,
+  \   html: v:true,
+  \   css: v:true,
+  \   javascript: v:true,
+  \   ddu-ff-filter: v:false,
+  \ }
+"}}}
+
+"******************************
+"* {{{ vim-chatgpt.vim
+"* need chatgpt client install in PATH
+"* https://github.com/mattn/chatgpt
+"* api key は ~/.vimrc-secrets (g:openai_api_key) から読み込む
+let g:chatgpt_api_key=get(g:, 'openai_api_key', '')
+let $CHATGPT_API_KEY=g:chatgpt_api_key
+let g:chatgpt_lang="ja"
+"*}}}
+
+"******************************
+"* {{{ joplin-vim, use joplin on vim, thogrough joplin webclipper port
+let g:joplin_token="f2284344167bafb4d61164859a3e726daa889c5b0d991c987cecb3cc15daea71757c7eea542dbe3bed2628a51532f1474f42a82e1b1e99bb661ff742ed28a0b6"
+"let g:joplin_host=
+"let g:joplin_port=
+
+"*}}}
+
+"******************************
+"* {{{ Telescope.nvim  nvim only
+"*
+if has('nvim')
+	lua <<EOL
+ require('telescope').setup{
+  defaults = {
+    vimgrep_arguments = {
+      'rg',
+      '--color=never',
+      '--no-heading',
+      '--with-filename',
+      '--line-number',
+      '--column',
+      '--smart-case'
+    },
+    prompt_prefix = "> ",
+    selection_caret = "> ",
+    entry_prefix = "  ",
+    initial_mode = "insert",
+    selection_strategy = "reset",
+    sorting_strategy = "descending",
+    layout_strategy = "horizontal",
+    layout_config = {
+      horizontal = {
+        mirror = false,
+      },
+      vertical = {
+        mirror = false,
+      },
+    },
+    file_sorter =  require'telescope.sorters'.get_fuzzy_file,
+    file_ignore_patterns = {},
+    generic_sorter =  require'telescope.sorters'.get_generic_fuzzy_sorter,
+    winblend = 0,
+    border = {},
+    borderchars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' },
+    color_devicons = true,
+    use_less = true,
+    path_display = {},
+    set_env = { ['COLORTERM'] = 'truecolor' }, -- default = nil,
+    file_previewer = require'telescope.previewers'.vim_buffer_cat.new,
+    grep_previewer = require'telescope.previewers'.vim_buffer_vimgrep.new,
+    qflist_previewer = require'telescope.previewers'.vim_buffer_qflist.new,
+
+    -- Developer configurations: Not meant for general override
+    buffer_previewer_maker = require'telescope.previewers'.buffer_previewer_maker
+  }
+ }
+EOL
+endif
+"*}}}
+
+"******************************
+"* {{{ nvim-orgmode  nvim only
+"*
+let g:org_cloudstorage_home = s:cloudstorage_home
+if has('nvim')
+lua << EOL
+	--local status_ok, orgmode = pcall(require, "orgmode")
+	--[[ -- old version setup style
+	require('orgmode').setup_ts_grammar()
+	require('nvim-treesitter.configs').setup{
+		highlight = {
+			enable = true,
+			additional_vim_regex_highlighting = {'org'},
+		},
+		ensure_installed = {'org'},
+	}
+	]]
+	require('orgmode').setup({
+		org_agenda_files = {
+			vim.g.org_cloudstorage_home..'/MyDocuments/apps/orgfiles/**/*',
+		},
+  		org_default_notes_file = '',
+	})
+	-- Experimental LSP support
+    vim.lsp.enable('org')
+EOL
+endif
+
+"*}}}
+
+
+"******************************
+"* {{{ ChatGPT.nvim nvim only
+"*
+let $OPENAI_API_KEY=g:chatgpt_api_key
+let $OPENAI_API_TYPE="openai"
+if has('nvim')
+	lua <<EOL
+ require('chatgpt').setup{
+ }
+EOL
+endif
+"}}}
+
+
+
+
+"}}} "***** Plugin Specific Configuration end
+
+
+
+"************************************************************************
+"* Old & Dead Config
+"* {{{ howm-mode.vim
+"*
+"***** scriptpath
+""set runtimepath+=~/.vimfiles/plugin/howm_vim
+"***** memodir
+
+"if kwenv =~# 'Win_work_ka-watanabe'
+"	"let g:howm_dir = "D:/0_0/MyDocuments_mount/MyDocuments/SVNroot_win/ksv01/trunk/memo/howm_memo"
+"	let g:howm_dir = "C:/Users/ka-watanabe/Documents/old_pc_MyDocuments/MyDocuments/SVNroot_win/ksv01/trunk/memo/howm_memo"
+"elseif kwenv =~# 'Linux_home_zaurus'
+"	let g:howm_dir = "/home/zaurus/SD/Documents/SVNroot/mackerel/svnrepos/trunk/memo/howm_memo"
+"elseif kwenv =~# 'Linux_home_mackerel'
+"	let g:howm_dir = "/home/kwatanabe/work/SVNroot/locals/mackerel/svnrepos/trunk/memo/howm_memo"
+"endif
+""***** howm-keys file path
+"if kwenv =~# 'Win_work_ka-watanabe'
+"	"let g:howm_keywordfile = "D:/0_0/MyDocuments_mount/MyDocuments/SVNroot_win/ksv01/trunk/memo/howm_memo/.hwom_keys"
+"	let g:howm_dir = "C:/Users/ka-watanabe/Documents/old_pc_MyDocuments/MyDocuments/SVNroot_win/ksv01/trunk/memo/howm_memo/.howm_keys"
+"elseif kwenv =~# 'Linux_home_zaurus'
+"	let g:howm_keywordfile = "/home/zaurus/SD/Documents/SVNroot/mackerel/svnrepos/trunk/memo/howm_memo/.howm_keys"
+"elseif kwenv =~# 'Linux_home_mackerel'
+"	let g:howm_dir = "/home/kwatanabe/work/SVNroot/locals/mackerel/svnrepos/trunk/memo/howm_memo/.howm_keys"
+"endif
+"
+""***** exclude file pattern
+"let g:howm_hidefile_regexp = '\.svn\|\.svn-base'
+""***** preview timing
+"let g:howm_instantpreview = 1
+""***** fileencoding
+"let g:howm_fileencoding = "euc-jp"
+""***** fileformat
+"let g:howm_fileformat = "unix"
+""***** commands
+""let g:howm_grepprg = "/usr/local/gnu/bin/grep"
+"let g:howm_grepprg = "grep"
+""let g:howm_grepprg = ""
+""let g:howm_findprg = "/usr/local/gnu/bin/find"
+"let g:howm_findprg = "find"
+""let g:howm_findprg = ""
+""***** oldversion ******
+""let g:howm_reminder_old_format = 1
+""let g:howm_filename = '%Y_%m_%d.howm'
+""let g:howm_date_pattern = '%Y/%m/%d'
+""let g:howm_glink_pattern='>>'
+""let g:howm_clink_pattern='<<'
+""}}}
+"
+
+
+"**  vim: set foldmethod=marker foldmarker={{{,}}} foldcolumn=4 nu: **

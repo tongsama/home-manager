@@ -466,7 +466,8 @@ git status --short
 │   ├── starship/
 │   │   └── starship.toml
 │   └── vim/
-│       └── vimrc.template
+│       ├── dotvimrc
+│       └── dotvimrc-secrets.template
 ├── secrets/
 │   ├── ssh.yaml
 │   ├── oci.yaml
@@ -717,8 +718,11 @@ chmod 600 secrets/plain-vim/secrets.env
 secrets/plain-vim/secrets.env
   -> secrets/vim.yaml へSOPS暗号化
   -> secrets/plain-vim/secrets.env を削除
-  -> files/vim/vimrc.template から ~/.vimrc を生成
+  -> files/vim/dotvimrc-secrets.template と secrets/vim.yaml から ~/.vimrc-secrets を生成
 ```
+
+`~/.vimrc` 本体は `files/vim/dotvimrc` への out-of-store symlink として配置され、
+その場での編集はそのまま本リポジトリの変更となる (生成物ではない)。
 
 すでに `secrets/vim.yaml` がGitに存在し、age keyで復号できる場合は、この手順は不要。
 
@@ -1112,8 +1116,8 @@ Vim / gVimは `vim.nix` と `secrets-vim.nix` で管理する。
 方針:
 
 * Vim本体はHome Managerで導入する
-* `~/.vimrc` はGit管理しない
-* `~/.vimrc` は `files/vim/vimrc.template` と `secrets/vim.yaml` から生成する
+* `~/.vimrc` 本体 (`files/vim/dotvimrc`) はGit管理し、out-of-store symlinkで配置する
+* secretは `~/.vimrc-secrets` に分離し、`files/vim/dotvimrc-secrets.template` と `secrets/vim.yaml` から生成して `~/.vimrc` から source する
 * vim-plug本体はHome Managerで配置する
 * vim-plugで管理するVimプラグイン本体はHome Manager外で管理する
 * Vimプラグインが要求する外部CLIはHome Managerで導入する
@@ -1127,20 +1131,33 @@ Vim / gVimは `vim.nix` と `secrets-vim.nix` で管理する。
 * vim-plug + `~/.vimrc` の通常運用と相性が悪い
 * `programs.vim` がVim本体を入れるため、`home.packages` 側のVimと衝突しやすい
 
-そのため、Vim本体は `home.packages` で入れ、`~/.vimrc` はactivationで通常ファイルとして生成する。
+そのため、Vim本体は `home.packages` で入れ、`~/.vimrc` 本体は out-of-store symlink で配置する。
+secretのみ activation で `~/.vimrc-secrets` として生成する。
 
 ### 管理ファイル
 
-Vim template:
+Vim本体 (out-of-store symlink元、Git管理):
 
 ```text
-files/vim/vimrc.template
+files/vim/dotvimrc
 ```
 
-生成先:
+symlink先:
 
 ```text
 ~/.vimrc
+```
+
+Vim secret template:
+
+```text
+files/vim/dotvimrc-secrets.template
+```
+
+secret生成先 (`~/.vimrc` から source):
+
+```text
+~/.vimrc-secrets
 ```
 
 Vim secret:
@@ -1172,9 +1189,10 @@ Git管理しない。
 
 ### Vim secret template
 
-`files/vim/vimrc.template` には、API keyなどの秘密値を直接書かない。
+`files/vim/dotvimrc-secrets.template` には、API keyなどの秘密値を直接書かない。
 
-代わりに、以下のようなplaceholderを書く。
+代わりに、以下のようなplaceholderを書き、`~/.vimrc-secrets` 生成時にsopsの値で置換する。
+`files/vim/dotvimrc` 側ではこの変数を source して参照する。
 
 ```vim
 let $OPENAI_API_KEY = '@OPENAI_API_KEY@'
@@ -1233,7 +1251,7 @@ OPENAI_API_KEY='sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 secrets/plain-vim/secrets.env
   -> secrets/vim.yaml へSOPS暗号化
   -> secrets/plain-vim/secrets.env を削除
-  -> files/vim/vimrc.template と secrets/vim.yaml から ~/.vimrc を生成
+  -> files/vim/dotvimrc-secrets.template と secrets/vim.yaml から ~/.vimrc-secrets を生成
 ```
 
 つまり、運用はこれだけでよい。
@@ -2861,7 +2879,7 @@ ok
 
 ### Vim secretのplaceholderが足りない
 
-`files/vim/vimrc.template` にあるplaceholderに対応するkeyが `secrets/vim.yaml` に無い場合、`hm-vim-secrets deploy` は失敗する。
+`files/vim/dotvimrc-secrets.template` にあるplaceholderに対応するkeyが `secrets/vim.yaml` に無い場合、`hm-vim-secrets deploy` は失敗する。
 
 例:
 
@@ -3318,7 +3336,7 @@ OCI configは `files/oci/config.template` の `@HOME_DIR@` から生成するた
 key_file=@HOME_DIR@/.oci/sessions/DEFAULT/oci_api_key.pem
 ```
 
-Vim configは `files/vim/vimrc.template` から生成するため、API keyの平文は書かない。
+Vim secretは `files/vim/dotvimrc-secrets.template` 経由で `~/.vimrc-secrets` に生成するため、API keyの平文は書かない。
 
 ```vim
 let $OPENAI_API_KEY = '@OPENAI_API_KEY@'
@@ -3344,7 +3362,7 @@ grep -RIn \
   'sk-[A-Za-z0-9_-]\{20,\}\|AGE-SECRET-KEY\|OPENAI_API_KEY=.*sk-' .
 ```
 
-`files/vim/vimrc.template` には、秘密値ではなくplaceholderだけが残っていればよい。
+`files/vim/dotvimrc-secrets.template` には、秘密値ではなくplaceholderだけが残っていればよい。
 
 ```text
 @OPENAI_API_KEY@
