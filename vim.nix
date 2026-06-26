@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 let
   vimPackage = pkgs.vim-full.override {
@@ -30,7 +30,14 @@ in
     ripgrep
   ];
 
-  # .vimrc は secrets-vim.nix が template + SOPS secret から生成する。
+  # .vimrc 本体は files/vim/dotvimrc を out-of-store symlink で配置する。
+  # ~/.vimrc への編集はそのまま本リポジトリ (files/vim/dotvimrc) の変更となり、
+  # git 管理に乗る。secret は secrets-vim.nix が ~/.vimrc-secrets を生成し、
+  # dotvimrc 側で source する。
+  home.file.".vimrc".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/.config/home-manager/files/vim/dotvimrc";
+
   home.file.".vim/autoload/plug.vim".source = vimPlug;
 
   home.sessionVariables = {

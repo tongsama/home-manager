@@ -50,6 +50,16 @@ set viminfo='1000
 set backspace=indent,eol,start
 "}}}
 
+"### {{{ load secrets ###################################
+"# ~/.vimrc-secrets は home-manager の hm-vim-secrets が
+"# files/vim/dotvimrc-secrets.template + sops から switch 時に生成する。
+"# g:openai_api_key などの秘密値を定義する。
+"# home-manager 管理外のホストでは存在しないため filereadable で保護する。
+if filereadable(expand('~/.vimrc-secrets'))
+	source ~/.vimrc-secrets
+endif
+"}}}
+
 "### {{{ path for every environments ########################################
 "#
 "# windows $VIM enrionment()vim home) is set to /path/to/installed/vim80/../
@@ -2203,7 +2213,8 @@ let g:copilot_filetypes = #{
 "* {{{ vim-chatgpt.vim
 "* need chatgpt client install in PATH
 "* https://github.com/mattn/chatgpt
-let g:chatgpt_api_key="@OPENAI_API_KEY@"
+"* api key は ~/.vimrc-secrets (g:openai_api_key) から読み込む
+let g:chatgpt_api_key=get(g:, 'openai_api_key', '')
 let $CHATGPT_API_KEY=g:chatgpt_api_key
 let g:chatgpt_lang="ja"
 "*}}}

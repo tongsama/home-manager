@@ -24,8 +24,8 @@ let
       secrets_file="$secrets_dir/vim.yaml"
       sops_config="$repo/.sops.yaml"
       age_key="$HOME/.config/sops/age/keys.txt"
-      vimrc_template="$repo/files/vim/vimrc.template"
-      vimrc_out="$HOME/.vimrc"
+      vimrc_secrets_template="$repo/files/vim/dotvimrc-secrets.template"
+      vimrc_secrets_out="$HOME/.vimrc-secrets"
 
       usage() {
         cat <<'EOF'
@@ -45,10 +45,10 @@ Files:
     secrets/vim.yaml
 
   template:
-    files/vim/vimrc.template
+    files/vim/dotvimrc-secrets.template
 
   generated:
-    ~/.vimrc
+    ~/.vimrc-secrets
 
 secrets.env format:
   OPENAI_API_KEY=sk-...
@@ -110,8 +110,8 @@ EOF
       }
 
       require_template() {
-        if [ ! -r "$vimrc_template" ]; then
-          echo "vimrc template not found: $vimrc_template" >&2
+        if [ ! -r "$vimrc_secrets_template" ]; then
+          echo "vimrc secrets template not found: $vimrc_secrets_template" >&2
           exit 1
         fi
       }
@@ -124,8 +124,8 @@ EOF
         echo "initialized vim secret paths"
         echo "plain input:      $plain_env"
         echo "encrypted secret: $secrets_file"
-        echo "template:         $vimrc_template"
-        echo "generated vimrc:  $vimrc_out"
+        echo "template:         $vimrc_secrets_template"
+        echo "generated secrets: $vimrc_secrets_out"
       }
 
       cmd_status() {
@@ -134,16 +134,16 @@ EOF
         echo "sops config:      $sops_config"
         echo "plain env:        $plain_env"
         echo "encrypted secret: $secrets_file"
-        echo "template:         $vimrc_template"
-        echo "generated vimrc:  $vimrc_out"
+        echo "template:         $vimrc_secrets_template"
+        echo "generated secrets: $vimrc_secrets_out"
         echo
 
         [ -f "$age_key" ] && echo "OK age key exists" || echo "NG age key missing"
         [ -f "$sops_config" ] && echo "OK .sops.yaml exists" || echo "NG .sops.yaml missing"
         [ -f "$plain_env" ] && echo "OK plaintext env exists" || echo "-- plaintext env missing"
         [ -f "$secrets_file" ] && echo "OK encrypted secret exists" || echo "NG encrypted secret missing"
-        [ -f "$vimrc_template" ] && echo "OK vimrc template exists" || echo "NG vimrc template missing"
-        [ -f "$vimrc_out" ] && echo "OK generated ~/.vimrc exists" || echo "-- generated ~/.vimrc missing"
+        [ -f "$vimrc_secrets_template" ] && echo "OK vimrc secrets template exists" || echo "NG vimrc secrets template missing"
+        [ -f "$vimrc_secrets_out" ] && echo "OK generated ~/.vimrc-secrets exists" || echo "-- generated ~/.vimrc-secrets missing"
       }
 
       env_to_json() {
@@ -283,7 +283,7 @@ PY
         sops --decrypt --output-type json "$secrets_file" > "$secrets_json"
 
         SECRETS_JSON="$secrets_json" \
-        VIMRC_TEMPLATE="$vimrc_template" \
+        VIMRC_TEMPLATE="$vimrc_secrets_template" \
         VIMRC_OUT="$tmp_vimrc" \
         python3 <<'PY'
 import json
@@ -316,16 +316,11 @@ def replace(match):
 out_path.write_text(placeholder_re.sub(replace, text))
 PY
 
-        # If ~/.vimrc is a symlink from an older home.file setup, remove it first.
-        if [ -L "$vimrc_out" ]; then
-          rm -f "$vimrc_out"
-        fi
-
-        install -m 600 "$tmp_vimrc" "$vimrc_out"
+        install -m 600 "$tmp_vimrc" "$vimrc_secrets_out"
 
         rm -f "$secrets_json" "$tmp_vimrc"
 
-        echo "deployed: $vimrc_out"
+        echo "deployed: $vimrc_secrets_out"
       }
 
       cmd_deploy() {
@@ -337,17 +332,17 @@ PY
 
         if [ "$soft" = "1" ]; then
           if [ ! -f "$age_key" ]; then
-            echo "[warning] age key not found; skipping vimrc deploy: $age_key" >&2
+            echo "[warning] age key not found; skipping secrets deploy: $age_key" >&2
             exit 0
           fi
 
           if [ ! -f "$secrets_file" ]; then
-            echo "[warning] encrypted vim secret not found; skipping vimrc deploy: $secrets_file" >&2
+            echo "[warning] encrypted vim secret not found; skipping secrets deploy: $secrets_file" >&2
             exit 0
           fi
 
-          if [ ! -f "$vimrc_template" ]; then
-            echo "[warning] vimrc template not found; skipping vimrc deploy: $vimrc_template" >&2
+          if [ ! -f "$vimrc_secrets_template" ]; then
+            echo "[warning] vimrc secrets template not found; skipping secrets deploy: $vimrc_secrets_template" >&2
             exit 0
           fi
         fi
