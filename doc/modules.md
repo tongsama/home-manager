@@ -18,6 +18,7 @@
 ├── vim.nix
 ├── secrets-vim.nix
 ├── skkdict.nix
+├── nvim.nix
 ├── nodejs.nix
 ├── fonts.nix
 ├── gui.nix
@@ -36,6 +37,8 @@
 │   ├── vim/
 │   │   ├── dotvimrc
 │   │   └── dotvimrc-secrets.template
+│   ├── nvim/
+│   │   └── init.vim
 │   └── skkdict/
 │       └── SKK-JISYO.MY.LL.eucjp.gz
 ├── secrets/
@@ -128,28 +131,31 @@ extraSpecialArgs = {
 * `programs.home-manager.enable = true`
 * `local.nix` 読み込み忘れや、実行ユーザ不一致を検出するactivation guard
 * `guiProfile` / `fcitx5Enable` を各module用のoptionへ渡す
+* `modules`(local.nix) に応じて optional module の import を組み替える
 
-読み込むmodule:
+読み込むmodule (core は常時、optional は `modules` で切り替え):
 
 ```nix
-imports = [
-  ./bash.nix
-  ./ssh.nix
-  ./secrets-ssh.nix
-  ./oci.nix
-  ./secrets-oci.nix
-  ./k8s-tools.nix
-  ./k8s-oci.nix
-  ./starship.nix
-
-  ./gui.nix
-  ./fonts.nix
-  ./vim.nix
-  ./secrets-vim.nix
-  ./nodejs.nix
-  ./wslg.nix
-  ./fcitx5.nix
-];
+imports =
+  [
+    # --- core (常時有効) ---
+    ./bash.nix
+    ./ssh.nix
+    ./secrets-ssh.nix
+    ./starship.nix
+    ./gui.nix
+    ./wslg.nix
+    ./fcitx5.nix
+    ./vim.nix
+    ./secrets-vim.nix
+    ./skkdict.nix
+  ]
+  # --- optional (local.nix の modules で組み替え) ---
+  ++ lib.optional  m.nvim ./nvim.nix
+  ++ lib.optional  m.nodejs ./nodejs.nix
+  ++ lib.optionals m.oci [ ./oci.nix ./secrets-oci.nix ]
+  ++ lib.optionals m.kubernetes [ ./k8s-tools.nix ./k8s-oci.nix ]
+  ++ lib.optional  m.fonts ./fonts.nix;
 ```
 
 ローカル設定値をmodule optionへ反映する。
@@ -167,6 +173,43 @@ my.fcitx5.enable = fcitx5Enable;
 ```bash
 home-manager switch --flake "$HOME/.config/home-manager#default" --impure -b backup
 ```
+
+### モジュール構成の組み替え (`modules`)
+
+「追加パッケージ群」(optional module) は `local.nix` の `modules` で有効/無効を切り替えられる。
+
+```nix
+# local.nix
+modules = {
+  nvim = true;
+  nodejs = true;
+  oci = true;
+  kubernetes = true;   # OKE。実行時はOCI認証が必要
+  fonts = true;
+};
+```
+
+* 指定しないキーは **既定 `true`**（未指定なら従来どおり全部入る）。
+* `false` にすると、その module の import 自体が外れる（評価もされない）。
+* `flake.nix` が既定値と `local.nix` の `modules` をマージし、`extraSpecialArgs.modules`
+  として `home.nix` に渡す。`home.nix` が `lib.optional(s)` で import を組み立てる。
+
+切り替え対象 (optional):
+
+| key | 含まれる module |
+|---|---|
+| `nvim` | `nvim.nix` |
+| `nodejs` | `nodejs.nix` |
+| `oci` | `oci.nix` + `secrets-oci.nix` |
+| `kubernetes` | `k8s-tools.nix` + `k8s-oci.nix` |
+| `fonts` | `fonts.nix` |
+
+core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `starship` /
+`gui` / `wslg` / `fcitx5` / `vim`(+`secrets-vim` / `skkdict`)。
+
+> 補足: `gui` / `wslg` / `fcitx5` は `my.gui.profile` 等で内部的に挙動が変わるため core 扱い。
+> `vim` は主エディタかつ `nvim` の依存元 (init.vim が `~/.vimrc` を source) のため core。
+> `kubernetes`(OKE) は実行時にOCI認証を使うため、実質 `oci` と併用が前提。
 
 ### `gui.nix`
 

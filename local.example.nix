@@ -29,4 +29,15 @@
   # Google Drive のマウント先 (省略時は "~/Gdrive_kwatan")。
   # 空文字 "" にすると Google Drive 連携を無効化する。
   googleDriveDir = "~/Gdrive_kwatan";
+
+  # 追加パッケージ群(optionalモジュール)の構成。
+  # 指定しないキーは既定 true (= 全部入る)。false にすると外せる。
+  # core (bash/ssh/starship/gui/wslg/fcitx5/vim) は常時有効で切り替え対象外。
+  # modules = {
+  #   nvim = true;
+  #   nodejs = true;
+  #   oci = true;
+  #   kubernetes = true;   # OKE。実行時はOCI認証が必要
+  #   fonts = true;
+  # };
 }
