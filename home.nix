@@ -61,12 +61,12 @@ in
     ++ lib.optionals m.oci [ ./oci.nix ./secrets-oci.nix ]
     ++ lib.optionals m.kubernetes [ ./k8s-tools.nix ./k8s-oci.nix ]
     ++ lib.optional m.fonts ./fonts.nix
-    # version manager 群 (既定 false)
-    ++ lib.optional m.goenv ./goenv.nix
-    ++ lib.optional m.pyenv ./pyenv.nix
-    ++ lib.optional m.rustup ./rustup.nix
-    ++ lib.optional m.nodenv ./nodenv.nix
-    ++ lib.optional m.plenv ./plenv.nix;
+    # version manager 群 (既定 false。値は false/true/"clone"/"nix")
+    ++ lib.optional (m.goenv != false) ./goenv.nix
+    ++ lib.optional (m.pyenv != false) ./pyenv.nix
+    ++ lib.optional (m.rustup != false) ./rustup.nix
+    ++ lib.optional (m.nodenv != false) ./nodenv.nix
+    ++ lib.optional (m.plenv != false) ./plenv.nix;
 
   home.username = username;
   home.homeDirectory = homeDirectory;

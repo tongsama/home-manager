@@ -199,17 +199,20 @@ home-manager switch --flake "$HOME/.config/home-manager#default" --impure -b bac
 ```nix
 # local.nix
 modules = {
-  oci = false;       # 既定 true のものを外す
-  pyenv = true;      # 既定 false のものを有効化
+  oci = false;          # 既定 true のものを外す (bool)
+  pyenv = "nix";        # version manager は false/true/"clone"/"nix" で source も選べる
+  nodenv = "clone";
 };
 ```
 
 * 既定値は `flake.nix` の `moduleConfig`（と `home.nix` の `m`）で定義。指定しないキーは既定値のまま。
 * `false` にすると、その module の import 自体が外れる（評価もされない）。
+* 通常の optional module は bool (`true`/`false`)。
+* **version manager** は `false` / `true`(既定source) / `"clone"` / `"nix"` を取り、source を選べる。
 * `flake.nix` が既定値と `local.nix` の `modules` をマージし、`extraSpecialArgs.modules`
-  として `home.nix` に渡す。`home.nix` が `lib.optional(s)` で import を組み立てる。
+  として渡す。`home.nix` が `lib.optional` で import を組み立て、各 module が source を解釈する。
 
-切り替え対象 (optional):
+切り替え対象 (optional)。bool 列が通常モジュール、source 列が version manager:
 
 | key | 既定 | 含まれる module / 本体 |
 |---|---|---|
@@ -218,11 +221,27 @@ modules = {
 | `oci` | true | `oci.nix` + `secrets-oci.nix` |
 | `kubernetes` | true | `k8s-tools.nix` + `k8s-oci.nix` |
 | `fonts` | true | `fonts.nix` |
-| `rustup` | **false** | `rustup.nix` (本体は Nix 導入) |
-| `pyenv` | **false** | `pyenv.nix` (有効時に `~/.pyenv` へ git clone、python-build 同梱) |
-| `goenv` | **false** | `goenv.nix` (有効時に `~/.goenv` へ git clone) |
-| `nodenv` | **false** | `nodenv.nix` (有効時に `~/.nodenv` + node-build へ git clone) |
-| `plenv` | **false** | `plenv.nix` (有効時に `~/.plenv` + perl-build へ git clone) |
+
+version manager (値 `false`/`true`/`"clone"`/`"nix"`、既定はいずれも無効):
+
+| key | 既定 source | nix | clone | 備考 |
+|---|---|---|---|---|
+| `rustup` | `nix` | ✓ | ✗ | clone 非対応 (公式は curl インストーラ) |
+| `pyenv` | `clone` | ✓ | ✓ | clone は `~/.pyenv` (python-build 同梱) |
+| `goenv` | `clone` | ✗ | ✓ | nixpkgs に無い。clone は `~/.goenv` |
+| `nodenv` | `clone` | (要確認) | ✓ | clone は `~/.nodenv` + node-build |
+| `plenv` | `clone` | (要確認) | ✓ | clone は `~/.plenv` + perl-build |
+
+* `"nix"` はそのツールが nixpkgs にある場合のみ。無いのに指定すると **明示エラー**
+  (`undefined variable` ではなく「nixpkgs に見つかりません」と出る)。`pkgs ? <tool>` で判定。
+* `"clone"` は各 module の activation が未取得時に `~/.X` へ `git clone --depth 1` する
+  (バージョン更新は手動: `git -C ~/.X pull`)。オフライン等で失敗しても switch は止めず警告のみ。
+* clone を既定にしているのは、同梱の `*-build` プラグイン (python-build / node-build 等、
+  インストール可能なバージョン定義) を `git pull` で最新化できるため。
+* シェル統合 (`files/bash/<tool>.bash` → `hm-extra.d/`) は clone/nix どちらでも動くようにしてある。
+* なお `pyenv install` での stdlib ビルドには別途 dev ライブラリが必要
+  (libssl-dev / zlib1g-dev / libbz2-dev / libreadline-dev / libsqlite3-dev /
+  libffi-dev / liblzma-dev 等)。これは導入方法に関わらず必要。
 
 core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `starship` /
 `gui` / `wslg` / `fcitx5` / `vim`(+`secrets-vim` / `skkdict`)。
@@ -230,20 +249,6 @@ core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `s
 > 補足: `gui` / `wslg` / `fcitx5` は `my.gui.profile` 等で内部的に挙動が変わるため core 扱い。
 > `vim` は主エディタかつ `nvim` の依存元 (init.vim が `~/.vimrc` を source) のため core。
 > `kubernetes`(OKE) は実行時にOCI認証を使うため、実質 `oci` と併用が前提。
->
-> version manager (goenv/pyenv/rustup/nodenv/plenv) は既定 false で、使うものだけ
-> `local.nix` の `modules` で true にする。シェル統合は `files/bash/<tool>.bash` を
-> `~/.config/bash/hm-extra.d/` に配置して行い、`~/.profile` / `~/.bashrc` は触らない。
-> goenv/pyenv/nodenv/plenv は各 module の activation が、未取得のとき
-> `~/.goenv` `~/.pyenv` `~/.nodenv` `~/.plenv` へ `git clone --depth 1` する
-> (バージョン更新は手動: `git -C ~/.X pull`)。オフライン等で clone に失敗しても
-> switch は止めず警告のみ。シェル統合は clone 後に効く。(Nix 導入は rustup のみ)
->
-> pyenv を clone にしているのは、同梱の python-build (インストール可能な Python
-> バージョン定義) を `git pull` で最新化できるため。nodenv/node-build も同様。
-> なお `pyenv install` での stdlib ビルドには別途 dev ライブラリが必要
-> (libssl-dev / zlib1g-dev / libbz2-dev / libreadline-dev / libsqlite3-dev /
-> libffi-dev / liblzma-dev 等)。これは導入方法に関わらず必要。
 
 ### `gui.nix`
 

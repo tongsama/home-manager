@@ -41,11 +41,15 @@
   #   kubernetes = true;   # OKE。実行時はOCI認証が必要
   #   fonts = true;
   #
-  #   # version manager 群 (既定 false。使うものだけ true にする)
-  #   rustup = false;      # 本体は Nix で導入
-  #   pyenv = false;       # 有効時に ~/.pyenv へ git clone (python-build 同梱)
-  #   goenv = false;       # 有効時に ~/.goenv へ git clone
-  #   nodenv = false;      # 有効時に ~/.nodenv (+node-build) へ git clone
-  #   plenv = false;       # 有効時に ~/.plenv (+perl-build) へ git clone
+  #   # version manager 群 (既定 false)。
+  #   # 値は false=無効 / true=既定source / "clone" / "nix" で source を選べる。
+  #   # 既定source: rustup=nix、他(pyenv/goenv/nodenv/plenv)=clone。
+  #   # nix導入はそのツールが nixpkgs にある場合のみ (無ければ明示エラー)。
+  #   # 現状 nixpkgs にあるのは pyenv/rustup。goenv は無い。nodenv/plenv は要確認。
+  #   pyenv = "clone";     # or "nix"
+  #   rustup = "nix";      # rustup は nix のみ
+  #   goenv = "clone";     # goenv は nixpkgs に無いので clone のみ
+  #   nodenv = "clone";    # ~/.nodenv (+node-build)
+  #   plenv = "clone";     # ~/.plenv (+perl-build)
   # };
 }
