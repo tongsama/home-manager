@@ -346,6 +346,34 @@ vim +'echo exists("*plug#begin")' +qa
 1
 ```
 
+## coc-settings.json と sonictemplate テンプレート
+
+どちらも `~/.vimrc` (dotvimrc) と同じく out-of-store symlink で配置し、
+その場での編集がそのまま本リポジトリの変更になる。`vim.nix` が管理する。
+
+### coc-settings.json
+
+`~/.vim/coc-settings.json` → `files/vim/coc-settings.json`。
+`~/.vim` は vim / nvim 双方の runtimepath に入る (nvim は init.vim で `runtimepath^=~/.vim`)
+ため、coc.nvim はこの 1 ファイルを vim でも nvim でも読む。
+
+### sonictemplate ユーザテンプレート
+
+`~/.vim/sonic-template` ディレクトリ → `files/vim/sonic-template` (ディレクトリごと symlink)。
+`dotvimrc` の `g:sonictemplate_vim_template_dir` がこれを参照する。
+
+```vim
+let g:sonictemplate_vim_template_dir = [
+  \ '~/.vim/sonic-template',                               " リポジトリ管理 (優先)
+  \ s:cloudstorage_home.'/MyDocuments/apps/sonictemplate',  " クラウド (フォールバック)
+  \]
+```
+
+* サブディレクトリ名が filetype に対応し、`_` は任意の filetype にマッチする。
+* 既定テンプレートは従来のクラウド側 (`sonictemplate`) から一式コピーして同梱
+  (`_/` 共通スニペット、`c/` `clang-format/` `rust/` `sh/` の各 filetype 用)。
+  取り込み時に `desktop.ini` を除去し、パーミッションを正常化 (dir 755 / file 644) してある。
+
 ## SKK辞書 (eskk)
 
 日本語入力プラグイン eskk が使う辞書のうち、**読み込み専用辞書**を Home Manager で配置する。

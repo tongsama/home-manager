@@ -1151,7 +1151,10 @@ let g:sql_type_default = 'pgsql'
 "* my customized templates
 "* subdirectory is match to buffer type name
 "* "_" is match to any type of buffer
+"* ~/.vim/sonic-template はリポジトリ管理(out-of-store symlink)。優先的に探索。
+"* クラウド側は既存テンプレートのフォールバックとして残す。
 let g:sonictemplate_vim_template_dir = [
+						\ '~/.vim/sonic-template',
 						\ s:cloudstorage_home.'/MyDocuments/apps/sonictemplate',
 						\]
 let g:sonictemplate_vim_vars = {

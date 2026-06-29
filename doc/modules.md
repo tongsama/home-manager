@@ -36,7 +36,14 @@
 │   │   └── starship.toml
 │   ├── vim/
 │   │   ├── dotvimrc
-│   │   └── dotvimrc-secrets.template
+│   │   ├── dotvimrc-secrets.template
+│   │   ├── coc-settings.json
+│   │   └── sonic-template/        # sonictemplate ユーザテンプレート
+│   │       ├── _/                 # 任意 filetype 共通
+│   │       ├── c/
+│   │       ├── clang-format/
+│   │       ├── rust/
+│   │       └── sh/
 │   ├── nvim/
 │   │   └── init.vim
 │   └── skkdict/
