@@ -1,7 +1,11 @@
 # Managed by Home Manager — pyenv
-# 本体は Nix で導入。python バージョンは ~/.pyenv 配下に展開される。
-# (pyenv install でのビルドには別途 C コンパイラ等のビルド依存が必要)
+# pyenv は pyenv.nix の activation が ~/.pyenv へ clone する (python-build 同梱)。
+# clone 前/失敗時でも壊れないよう存在ガードする。
+# python バージョンは ~/.pyenv/versions に入る (pyenv install でソースからビルド)。
 export PYENV_ROOT="$HOME/.pyenv"
-if command -v pyenv >/dev/null 2>&1; then
-  eval "$(pyenv init -)"
+if [ -d "$PYENV_ROOT/bin" ]; then
+  path_prepend "$PYENV_ROOT/bin"
+  if command -v pyenv >/dev/null 2>&1; then
+    eval "$(pyenv init -)"
+  fi
 fi

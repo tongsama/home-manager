@@ -42,8 +42,8 @@
   #   fonts = true;
   #
   #   # version manager 群 (既定 false。使うものだけ true にする)
-  #   pyenv = false;       # 本体は Nix で導入
   #   rustup = false;      # 本体は Nix で導入
+  #   pyenv = false;       # 有効時に ~/.pyenv へ git clone (python-build 同梱)
   #   goenv = false;       # 有効時に ~/.goenv へ git clone
   #   nodenv = false;      # 有効時に ~/.nodenv (+node-build) へ git clone
   #   plenv = false;       # 有効時に ~/.plenv (+perl-build) へ git clone

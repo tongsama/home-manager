@@ -218,8 +218,8 @@ modules = {
 | `oci` | true | `oci.nix` + `secrets-oci.nix` |
 | `kubernetes` | true | `k8s-tools.nix` + `k8s-oci.nix` |
 | `fonts` | true | `fonts.nix` |
-| `pyenv` | **false** | `pyenv.nix` (本体は Nix 導入) |
 | `rustup` | **false** | `rustup.nix` (本体は Nix 導入) |
+| `pyenv` | **false** | `pyenv.nix` (有効時に `~/.pyenv` へ git clone、python-build 同梱) |
 | `goenv` | **false** | `goenv.nix` (有効時に `~/.goenv` へ git clone) |
 | `nodenv` | **false** | `nodenv.nix` (有効時に `~/.nodenv` + node-build へ git clone) |
 | `plenv` | **false** | `plenv.nix` (有効時に `~/.plenv` + perl-build へ git clone) |
@@ -234,10 +234,16 @@ core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `s
 > version manager (goenv/pyenv/rustup/nodenv/plenv) は既定 false で、使うものだけ
 > `local.nix` の `modules` で true にする。シェル統合は `files/bash/<tool>.bash` を
 > `~/.config/bash/hm-extra.d/` に配置して行い、`~/.profile` / `~/.bashrc` は触らない。
-> goenv/nodenv/plenv は nixpkgs に無いため、Nix では入れず、各 module の activation が
-> 未取得のとき `~/.goenv` `~/.nodenv` `~/.plenv` へ `git clone --depth 1` する
+> goenv/pyenv/nodenv/plenv は各 module の activation が、未取得のとき
+> `~/.goenv` `~/.pyenv` `~/.nodenv` `~/.plenv` へ `git clone --depth 1` する
 > (バージョン更新は手動: `git -C ~/.X pull`)。オフライン等で clone に失敗しても
-> switch は止めず警告のみ。シェル統合は clone 後に効く。(Nix 導入は pyenv/rustup のみ)
+> switch は止めず警告のみ。シェル統合は clone 後に効く。(Nix 導入は rustup のみ)
+>
+> pyenv を clone にしているのは、同梱の python-build (インストール可能な Python
+> バージョン定義) を `git pull` で最新化できるため。nodenv/node-build も同様。
+> なお `pyenv install` での stdlib ビルドには別途 dev ライブラリが必要
+> (libssl-dev / zlib1g-dev / libbz2-dev / libreadline-dev / libsqlite3-dev /
+> libffi-dev / liblzma-dev 等)。これは導入方法に関わらず必要。
 
 ### `gui.nix`
 
