@@ -5,16 +5,23 @@ let
   src = if builtins.isString raw then raw else "clone";      # 既定 source = clone
   pyenvDir = "${config.home.homeDirectory}/.pyenv";
 in
-assert lib.assertMsg (src == "clone" || src == "nix")
-  "modules.pyenv は true/false/\"clone\"/\"nix\" のいずれかにしてください (指定: ${toString raw})。";
-assert lib.assertMsg (src != "nix" || (pkgs ? pyenv))
-  "pyenv が nixpkgs に見つかりません。modules.pyenv = \"clone\" を使ってください。";
 {
+  assertions = [
+    {
+      assertion = src == "clone" || src == "nix";
+      message = "modules.pyenv は true/false/\"clone\"/\"nix\" のいずれかにしてください。";
+    }
+    {
+      assertion = src != "nix" || (pkgs ? pyenv);
+      message = "pyenv が nixpkgs に見つかりません。modules.pyenv = \"clone\" を使ってください。";
+    }
+  ];
+
   # シェル統合 (clone/nix どちらでも動く)
   home.file.".config/bash/hm-extra.d/pyenv.bash".source = ./files/bash/pyenv.bash;
 
   # nix 導入
-  home.packages = lib.optionals (src == "nix") [ pkgs.pyenv ];
+  home.packages = lib.optionals (src == "nix" && (pkgs ? pyenv)) [ pkgs.pyenv ];
 
   # clone 導入 (python-build 同梱。git -C ~/.pyenv pull で版定義を最新化できる)
   home.activation = lib.mkIf (src == "clone") {

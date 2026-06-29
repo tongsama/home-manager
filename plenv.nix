@@ -6,16 +6,23 @@ let
   plenvDir = "${config.home.homeDirectory}/.plenv";
   perlBuildDir = "${plenvDir}/plugins/perl-build";
 in
-assert lib.assertMsg (src == "clone" || src == "nix")
-  "modules.plenv は true/false/\"clone\"/\"nix\" のいずれかにしてください (指定: ${toString raw})。";
-assert lib.assertMsg (src != "nix" || (pkgs ? plenv))
-  "plenv が nixpkgs に見つかりません。modules.plenv = \"clone\" を使ってください。";
 {
+  assertions = [
+    {
+      assertion = src == "clone" || src == "nix";
+      message = "modules.plenv は true/false/\"clone\"/\"nix\" のいずれかにしてください。";
+    }
+    {
+      assertion = src != "nix" || (pkgs ? plenv);
+      message = "plenv が nixpkgs に見つかりません。modules.plenv = \"clone\" を使ってください。";
+    }
+  ];
+
   # シェル統合 (clone/nix どちらでも動く)
   home.file.".config/bash/hm-extra.d/plenv.bash".source = ./files/bash/plenv.bash;
 
-  # nix 導入 (nixpkgs に plenv があれば)
-  home.packages = lib.optionals (src == "nix") [ pkgs.plenv ];
+  # nix 導入 (pkgs に plenv がある場合のみ)
+  home.packages = lib.optionals (src == "nix" && (pkgs ? plenv)) [ pkgs.plenv ];
 
   # clone 導入 (`plenv install` 用に perl-build プラグインも入れる)
   home.activation = lib.mkIf (src == "clone") {

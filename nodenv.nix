@@ -6,16 +6,25 @@ let
   nodenvDir = "${config.home.homeDirectory}/.nodenv";
   nodeBuildDir = "${nodenvDir}/plugins/node-build";
 in
-assert lib.assertMsg (src == "clone" || src == "nix")
-  "modules.nodenv は true/false/\"clone\"/\"nix\" のいずれかにしてください (指定: ${toString raw})。";
-assert lib.assertMsg (src != "nix" || (pkgs ? nodenv))
-  "nodenv が nixpkgs に見つかりません。modules.nodenv = \"clone\" を使ってください。";
 {
+  # source の妥当性 / nix在否は assertions (config層) でチェックする。
+  # トップレベル assert で pkgs を参照すると module 構造評価で無限再帰になるため。
+  assertions = [
+    {
+      assertion = src == "clone" || src == "nix";
+      message = "modules.nodenv は true/false/\"clone\"/\"nix\" のいずれかにしてください。";
+    }
+    {
+      assertion = src != "nix" || (pkgs ? nodenv);
+      message = "nodenv が nixpkgs に見つかりません。modules.nodenv = \"clone\" を使ってください。";
+    }
+  ];
+
   # シェル統合 (clone/nix どちらでも動く)
   home.file.".config/bash/hm-extra.d/nodenv.bash".source = ./files/bash/nodenv.bash;
 
-  # nix 導入 (nixpkgs に nodenv があれば)
-  home.packages = lib.optionals (src == "nix") [ pkgs.nodenv ];
+  # nix 導入 (pkgs に nodenv がある場合のみ。無ければ上の assertion がエラーを出す)
+  home.packages = lib.optionals (src == "nix" && (pkgs ? nodenv)) [ pkgs.nodenv ];
 
   # clone 導入 (node-build プラグインも入れる)
   home.activation = lib.mkIf (src == "clone") {
