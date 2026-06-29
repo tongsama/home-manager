@@ -370,7 +370,9 @@ let g:sonictemplate_vim_template_dir = [
 ```
 
 * サブディレクトリ名が filetype に対応し、`_` は任意の filetype にマッチする。
-* 既定で `files/vim/sonic-template/_/usual_footer` を同梱 (fold 用 modeline)。
+* 既定テンプレートは従来のクラウド側 (`sonictemplate`) から一式コピーして同梱
+  (`_/` 共通スニペット、`c/` `clang-format/` `rust/` `sh/` の各 filetype 用)。
+  取り込み時に `desktop.ini` を除去し、パーミッションを正常化 (dir 755 / file 644) してある。
 
 ## SKK辞書 (eskk)
 

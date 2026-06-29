@@ -1,0 +1,5 @@
+BasedOnStyle: 'Google'
+BreakBeforeBraces: 'Allman'
+IndentWidth: 4
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true

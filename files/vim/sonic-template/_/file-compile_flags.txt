@@ -1,0 +1,3 @@
+-I.
+-I/usr/local/include
+-D_SOMEDEFINITION_

@@ -38,8 +38,12 @@
 │   │   ├── dotvimrc
 │   │   ├── dotvimrc-secrets.template
 │   │   ├── coc-settings.json
-│   │   └── sonic-template/
-│   │       └── _/usual_footer
+│   │   └── sonic-template/        # sonictemplate ユーザテンプレート
+│   │       ├── _/                 # 任意 filetype 共通
+│   │       ├── c/
+│   │       ├── clang-format/
+│   │       ├── rust/
+│   │       └── sh/
 │   ├── nvim/
 │   │   └── init.vim
 │   └── skkdict/
