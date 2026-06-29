@@ -54,6 +54,19 @@
 
       effectiveConfig = defaultConfig // localConfig;
 
+      # 追加パッケージ群(optionalモジュール)の構成。
+      # local.nix の `modules` で上書きできる (例: modules = { oci = false; };)。
+      # 既定は全て true なので、未指定なら従来どおり全部入る。
+      moduleConfig =
+        {
+          nvim = true;
+          nodejs = true;
+          oci = true;
+          kubernetes = true;
+          fonts = true;
+        }
+        // (localConfig.modules or {});
+
       system = effectiveConfig.system;
       username = effectiveConfig.username;
       homePrefix = effectiveConfig.homePrefix or "/home";
@@ -84,6 +97,7 @@
             guiProfile = localConfig.guiProfile or "none";
             fcitx5Enable = localConfig.fcitx5Enable or false;
             googleDriveDir = localConfig.googleDriveDir or "~/Gdrive_kwatan";
+            modules = moduleConfig;
           };
 
           modules = [

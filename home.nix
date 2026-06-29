@@ -8,34 +8,51 @@
 #, wslgEnable ? false
 , guiProfile ? "none"
 , fcitx5Enable ? false
+, modules ? {}
 , ...
 }:
 
 let
   localConfigLoadedFlag =
     if localConfigLoaded then "1" else "0";
+
+  # optionalモジュールの有効/無効 (既定は全て true)。
+  # flake.nix が local.nix の `modules` とマージして渡す。
+  m =
+    {
+      nvim = true;
+      nodejs = true;
+      oci = true;
+      kubernetes = true;
+      fonts = true;
+    }
+    // modules;
 in
 {
-  imports = [
-    ./bash.nix
-    ./ssh.nix
-    ./secrets-ssh.nix
-    ./oci.nix
-    ./secrets-oci.nix
-    ./k8s-tools.nix
-    ./k8s-oci.nix
-    ./starship.nix
+  imports =
+    [
+      # --- core (常時有効) ---
+      ./bash.nix
+      ./ssh.nix
+      ./secrets-ssh.nix
+      ./starship.nix
 
-    ./gui.nix
-    ./fonts.nix
-    ./vim.nix
-    ./secrets-vim.nix
-    ./skkdict.nix
-    ./nvim.nix
-    ./wslg.nix
-    ./fcitx5.nix
-    ./nodejs.nix
-  ];
+      # gui/wslg/fcitx5 は my.gui.profile 等で内部的に切り替わるので常時import
+      ./gui.nix
+      ./wslg.nix
+      ./fcitx5.nix
+
+      # vim は主エディタかつ nvim の依存元なので core
+      ./vim.nix
+      ./secrets-vim.nix
+      ./skkdict.nix
+    ]
+    # --- optional (local.nix の modules で組み替え) ---
+    ++ lib.optional m.nvim ./nvim.nix
+    ++ lib.optional m.nodejs ./nodejs.nix
+    ++ lib.optionals m.oci [ ./oci.nix ./secrets-oci.nix ]
+    ++ lib.optionals m.kubernetes [ ./k8s-tools.nix ./k8s-oci.nix ]
+    ++ lib.optional m.fonts ./fonts.nix;
 
   home.username = username;
   home.homeDirectory = homeDirectory;
