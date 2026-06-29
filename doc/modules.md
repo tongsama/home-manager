@@ -18,6 +18,7 @@
 ├── vim.nix
 ├── secrets-vim.nix
 ├── skkdict.nix
+├── nvim.nix
 ├── nodejs.nix
 ├── fonts.nix
 ├── gui.nix
@@ -36,6 +37,8 @@
 │   ├── vim/
 │   │   ├── dotvimrc
 │   │   └── dotvimrc-secrets.template
+│   ├── nvim/
+│   │   └── init.vim
 │   └── skkdict/
 │       └── SKK-JISYO.MY.LL.eucjp.gz
 ├── secrets/

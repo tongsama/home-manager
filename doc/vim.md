@@ -386,5 +386,31 @@ home.file.".SKK-JISYO.MY.LL.eucjp".source = skkDictMyLL;
 :echo g:eskk#large_dictionary
 ```
 
+## Neovim との共存
+
+`nvim.nix` が neovim 本体を導入し、`~/.config/nvim/init.vim` を
+out-of-store symlink (`files/nvim/init.vim`) として配置する。
+`~/.vimrc` と同じく、その場での編集がそのまま本リポジトリの変更になる。
+
+`init.vim` は `nvim-from-vim` 方式で `~/.vimrc` (= `files/vim/dotvimrc`) を source し、
+vim と nvim で設定を共有する。
+
+```vim
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath = &runtimepath
+source ~/.vimrc
+```
+
+* `runtimepath^=~/.vim` により、vim-plug 本体 (`~/.vim/autoload/plug.vim`) や
+  プラグイン (`~/.vim/bundle`) を nvim でも共有する。
+* nvim 固有の設定は、`dotvimrc` 内の `if has('nvim')` 分岐で処理される。
+
+確認:
+
+```bash
+nvim +'echo $MYVIMRC' +qa     # 本体起動確認
+readlink -f ~/.config/nvim/init.vim   # => files/nvim/init.vim を指す
+```
+
 クラウドが無い環境では、それぞれ `~/.eskk` と `~/.SKK-JISYO.MY.LL.eucjp` にフォールバックする。
 

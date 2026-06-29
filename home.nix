@@ -31,6 +31,7 @@ in
     ./vim.nix
     ./secrets-vim.nix
     ./skkdict.nix
+    ./nvim.nix
     ./wslg.nix
     ./fcitx5.nix
     ./nodejs.nix
