@@ -218,9 +218,9 @@ modules = {
 | `oci` | true | `oci.nix` + `secrets-oci.nix` |
 | `kubernetes` | true | `k8s-tools.nix` + `k8s-oci.nix` |
 | `fonts` | true | `fonts.nix` |
-| `goenv` | **false** | `goenv.nix` (本体は Nix 導入) |
 | `pyenv` | **false** | `pyenv.nix` (本体は Nix 導入) |
 | `rustup` | **false** | `rustup.nix` (本体は Nix 導入) |
+| `goenv` | **false** | `goenv.nix` (本体は手動導入前提、`~/.goenv`) |
 | `nvm` | **false** | `nvm.nix` (本体は手動導入前提、`~/.nvm`) |
 | `plenv` | **false** | `plenv.nix` (本体は手動導入前提、`~/.plenv`) |
 
@@ -234,7 +234,8 @@ core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `s
 > version manager (goenv/pyenv/rustup/nvm/plenv) は既定 false で、使うものだけ
 > `local.nix` の `modules` で true にする。シェル統合は `files/bash/<tool>.bash` を
 > `~/.config/bash/hm-extra.d/` に配置して行い、`~/.profile` / `~/.bashrc` は触らない。
-> nvm/plenv は nixpkgs に無いため本体は手動導入前提で、未導入ならシェル統合は何もしない。
+> goenv/nvm/plenv は nixpkgs に無いため本体は手動導入前提で、未導入ならシェル統合は何もしない。
+> (Nix 導入は pyenv/rustup のみ)
 
 ### `gui.nix`
 
