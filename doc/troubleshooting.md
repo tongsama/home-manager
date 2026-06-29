@@ -317,9 +317,9 @@ yarn --version
 
 ただし、`yarn` のような常用CLIは、できればNixで入れる。
 
-### nvm使用時にnpm global prefixが混ざる
+### nvm/nodenv 使用時にnpm global prefixが混ざる
 
-`~/.npmrc` に以下のようなprefixを直接書くと、nvm利用時のnpmにも影響することがある。
+`~/.npmrc` に以下のようなprefixを直接書くと、nvm/nodenv 利用時のnpmにも影響することがある。
 
 ```ini
 prefix=/home/new_user/.local/share/npm-global
@@ -327,11 +327,12 @@ prefix=/home/new_user/.local/share/npm-global
 
 そのため、このリポジトリでは `~/.npmrc` にprefixを直接書かない。
 
-代わりに、`hm-extra.d/npm-global.bash` で `npm` 関数を定義し、nvm未使用時だけ `NPM_CONFIG_PREFIX` を付ける。
+代わりに、`hm-extra.d/npm-global.bash` で `npm` 関数を定義し、別のNode版管理を
+使っていないときだけ `NPM_CONFIG_PREFIX` を付ける。
 
 ```bash
 npm() {
-  if [ -z "${NVM_BIN:-}" ]; then
+  if [ -z "${NVM_BIN:-}" ] && [ -z "${NODENV_ROOT:-}" ]; then
     NPM_CONFIG_PREFIX="$NPM_GLOBAL_DIR" command npm "$@"
   else
     command npm "$@"
@@ -339,7 +340,7 @@ npm() {
 }
 ```
 
-`NVM_BIN` がある場合は、nvm側のnpm挙動をそのまま使う。
+`NVM_BIN` (nvm) や `NODENV_ROOT` (nodenv) がある場合は、その版管理側のnpm挙動をそのまま使う。
 
 ### fcitx5系パッケージが衝突する
 

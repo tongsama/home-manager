@@ -31,7 +31,7 @@ let
       goenv = false;
       pyenv = false;
       rustup = false;
-      nvm = false;
+      nodenv = false;
       plenv = false;
     }
     // modules;
@@ -65,7 +65,7 @@ in
     ++ lib.optional m.goenv ./goenv.nix
     ++ lib.optional m.pyenv ./pyenv.nix
     ++ lib.optional m.rustup ./rustup.nix
-    ++ lib.optional m.nvm ./nvm.nix
+    ++ lib.optional m.nodenv ./nodenv.nix
     ++ lib.optional m.plenv ./plenv.nix;
 
   home.username = username;

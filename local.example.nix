@@ -45,7 +45,7 @@
   #   pyenv = false;       # 本体は Nix で導入
   #   rustup = false;      # 本体は Nix で導入
   #   goenv = false;       # 有効時に ~/.goenv へ git clone
-  #   nvm = false;         # 有効時に ~/.nvm へ git clone
+  #   nodenv = false;      # 有効時に ~/.nodenv (+node-build) へ git clone
   #   plenv = false;       # 有効時に ~/.plenv (+perl-build) へ git clone
   # };
 }

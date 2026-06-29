@@ -69,7 +69,7 @@
           goenv = false;
           pyenv = false;
           rustup = false;
-          nvm = false;
+          nodenv = false;
           plenv = false;
         }
         // (localConfig.modules or {});
