@@ -24,9 +24,9 @@ in
     path_prepend "$NPM_GLOBAL_DIR/bin"
 
     # Nixで入れたnodejs/npmを使っている時だけ、npm -g のprefixをHOME配下へ逃がす。
-    # nvm利用中はNVM_BINが立つので、nvm側のnpm挙動を邪魔しない。
+    # nvm(NVM_BIN) や nodenv(NODENV_ROOT) を使っている時は、その node/npm 挙動を邪魔しない。
     npm() {
-      if [ -z "''${NVM_BIN:-}" ]; then
+      if [ -z "''${NVM_BIN:-}" ] && [ -z "''${NODENV_ROOT:-}" ]; then
         NPM_CONFIG_PREFIX="$NPM_GLOBAL_DIR" command npm "$@"
       else
         command npm "$@"

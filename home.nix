@@ -16,8 +16,9 @@ let
   localConfigLoadedFlag =
     if localConfigLoaded then "1" else "0";
 
-  # optionalモジュールの有効/無効 (既定は全て true)。
+  # optionalモジュールの有効/無効。
   # flake.nix が local.nix の `modules` とマージして渡す。
+  # 既定値はここと flake.nix の moduleConfig を一致させること。
   m =
     {
       nvim = true;
@@ -25,6 +26,13 @@ let
       oci = true;
       kubernetes = true;
       fonts = true;
+
+      # version manager 群 (既定 false)
+      goenv = false;
+      pyenv = false;
+      rustup = false;
+      nodenv = false;
+      plenv = false;
     }
     // modules;
 in
@@ -52,7 +60,13 @@ in
     ++ lib.optional m.nodejs ./nodejs.nix
     ++ lib.optionals m.oci [ ./oci.nix ./secrets-oci.nix ]
     ++ lib.optionals m.kubernetes [ ./k8s-tools.nix ./k8s-oci.nix ]
-    ++ lib.optional m.fonts ./fonts.nix;
+    ++ lib.optional m.fonts ./fonts.nix
+    # version manager 群 (既定 false。値は false/true/"clone"/"nix")
+    ++ lib.optional (m.goenv != false) ./goenv.nix
+    ++ lib.optional (m.pyenv != false) ./pyenv.nix
+    ++ lib.optional (m.rustup != false) ./rustup.nix
+    ++ lib.optional (m.nodenv != false) ./nodenv.nix
+    ++ lib.optional (m.plenv != false) ./plenv.nix;
 
   home.username = username;
   home.homeDirectory = homeDirectory;

@@ -69,11 +69,18 @@ fi
 ~/.config/bash/hm-extra.d/npm-global.bash
 ~/.config/bash/hm-extra.d/fcitx5-wslg.bash
 ~/.config/bash/hm-extra.d/tty.bash
+~/.config/bash/hm-extra.d/{goenv,pyenv,rustup,nodenv,plenv}.bash  # version manager (optional)
 ```
 
 WSLg環境では、`fcitx5-wslg.bash` からfcitx5を起動する。
 
 Node.js/npm環境では、`npm-global.bash` からnpm global install用のPATH追加とnpm wrapperを読み込む。
+
+fragmentの中身は、`bash.nix` 等に直接 `.text` で書く方式のほか、
+`files/bash/<name>.bash` にファイルとして置き、module から
+`home.file.".config/bash/hm-extra.d/<name>.bash".source = ./files/bash/<name>.bash;`
+で配置する方式もある。version manager 群 (goenv/pyenv/rustup/nodenv/plenv) は後者で、
+`files/bash/` に実体を置く。いずれも `~/.profile` / `~/.bashrc` は直接編集しない。
 
 ### `tty.bash` (端末設定)
 
