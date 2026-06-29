@@ -228,9 +228,9 @@ version manager (値 `false`/`true`/`"clone"`/`"nix"`、既定はいずれも無
 |---|---|---|---|---|
 | `rustup` | `nix` | ✓ | ✗ | clone 非対応 (公式は curl インストーラ) |
 | `pyenv` | `clone` | ✓ | ✓ | clone は `~/.pyenv` (python-build 同梱) |
+| `nodenv` | `clone` | ✓ | ✓ | clone は `~/.nodenv` + node-build |
 | `goenv` | `clone` | ✗ | ✓ | nixpkgs に無い。clone は `~/.goenv` |
-| `nodenv` | `clone` | (要確認) | ✓ | clone は `~/.nodenv` + node-build |
-| `plenv` | `clone` | (要確認) | ✓ | clone は `~/.plenv` + perl-build |
+| `plenv` | `clone` | ✗ | ✓ | nixpkgs に無い。clone は `~/.plenv` + perl-build |
 
 * `"nix"` はそのツールが nixpkgs にある場合のみ。無いのに指定すると **明示エラー**
   (`undefined variable` ではなく「nixpkgs に見つかりません」と出る)。`pkgs ? <tool>` で判定。

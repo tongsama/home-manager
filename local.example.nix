@@ -45,11 +45,11 @@
   #   # 値は false=無効 / true=既定source / "clone" / "nix" で source を選べる。
   #   # 既定source: rustup=nix、他(pyenv/goenv/nodenv/plenv)=clone。
   #   # nix導入はそのツールが nixpkgs にある場合のみ (無ければ明示エラー)。
-  #   # 現状 nixpkgs にあるのは pyenv/rustup。goenv は無い。nodenv/plenv は要確認。
+  #   # nixpkgs にあるのは pyenv/rustup/nodenv。goenv/plenv は無い。
   #   pyenv = "clone";     # or "nix"
+  #   nodenv = "clone";    # or "nix"。clone は ~/.nodenv (+node-build)
   #   rustup = "nix";      # rustup は nix のみ
   #   goenv = "clone";     # goenv は nixpkgs に無いので clone のみ
-  #   nodenv = "clone";    # ~/.nodenv (+node-build)
-  #   plenv = "clone";     # ~/.plenv (+perl-build)
+  #   plenv = "clone";     # plenv は nixpkgs に無いので clone のみ (~/.plenv +perl-build)
   # };
 }
