@@ -1,7 +1,16 @@
 { pkgs, config, ... }:
 
+let
+  # vimspector など +python3 を要求するプラグインのため、python3 provider を有効化する。
+  # nvim の has('python3') は python3 host に pynvim が import できるかで判定されるので、
+  # pynvim を同梱した neovim を構成する。
+  neovim = pkgs.neovim.override {
+    withPython3 = true;
+    extraPython3Packages = ps: with ps; [ pynvim ];
+  };
+in
 {
-  home.packages = with pkgs; [
+  home.packages = [
     neovim
   ];
 

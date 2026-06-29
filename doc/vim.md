@@ -386,6 +386,8 @@ home.file.".SKK-JISYO.MY.LL.eucjp".source = skkDictMyLL;
 :echo g:eskk#large_dictionary
 ```
 
+クラウドが無い環境では、それぞれ `~/.eskk` と `~/.SKK-JISYO.MY.LL.eucjp` にフォールバックする。
+
 ## Neovim との共存
 
 `nvim.nix` が neovim 本体を導入し、`~/.config/nvim/init.vim` を
@@ -404,6 +406,22 @@ source ~/.vimrc
 * `runtimepath^=~/.vim` により、vim-plug 本体 (`~/.vim/autoload/plug.vim`) や
   プラグイン (`~/.vim/bundle`) を nvim でも共有する。
 * nvim 固有の設定は、`dotvimrc` 内の `if has('nvim')` 分岐で処理される。
+* vim 専用オプション (`termencoding` / `t_Co` 等) は `dotvimrc` 内で `!has('nvim')` ガードしてある
+  (nvim では E519 / E518 になるため)。
+
+### python3 provider (pynvim)
+
+`vimspector` など `+python3` を要求するプラグインのため、`nvim.nix` は python3 provider を
+有効化し `pynvim` を同梱した neovim を構成する。
+
+```nix
+neovim = pkgs.neovim.override {
+  withPython3 = true;
+  extraPython3Packages = ps: with ps; [ pynvim ];
+};
+```
+
+`:echo has('python3')` が `1` を返せばOK (`Requires +python3` 警告が消える)。
 
 確認:
 
@@ -411,6 +429,4 @@ source ~/.vimrc
 nvim +'echo $MYVIMRC' +qa     # 本体起動確認
 readlink -f ~/.config/nvim/init.vim   # => files/nvim/init.vim を指す
 ```
-
-クラウドが無い環境では、それぞれ `~/.eskk` と `~/.SKK-JISYO.MY.LL.eucjp` にフォールバックする。
 

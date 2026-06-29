@@ -425,14 +425,17 @@ endif
 set imi=0
 set ims=0
 "***** ターミナルのエンコード
-if kwenv =~# 'Linux_home_zaurus'
-	set termencoding=euc-jp
-	"Chaliceのソースがeucjp-msっぽいのでeuc-jpだと'～'でエラーが出る
-	"->Chaliceソースのencodingをeuc-jpに変換した
-	set encoding=euc-jp
-	"set fileencoding=eucjp-ms
-elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
-	set termencoding=utf-8
+"* nvim は内部が常にUTF-8で termencoding/encoding を持たない(E519)ため vim 限定。
+if !has('nvim')
+	if kwenv =~# 'Linux_home_zaurus'
+		set termencoding=euc-jp
+		"Chaliceのソースがeucjp-msっぽいのでeuc-jpだと'～'でエラーが出る
+		"->Chaliceソースのencodingをeuc-jpに変換した
+		set encoding=euc-jp
+		"set fileencoding=eucjp-ms
+	elseif kwenv =~# 'Unix_' || kwenv =~# 'Linux_'
+		set termencoding=utf-8
+	endif
 endif
 
 "***** ファイルのデフォルトエンコード
@@ -1071,7 +1074,8 @@ filetype plugin indent on
 " {{{ after common
 "-----terminal coloring
 "# enable terminal256coloring
-if !has("gui_running")
+"* nvim は t_Co 非対応(E518)。色は termguicolors/自動検出に任せるため vim 限定。
+if !has("gui_running") && !has('nvim')
 	set t_Co=16
 	set t_Co=256
 	"set t_Co=256
