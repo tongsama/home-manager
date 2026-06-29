@@ -38,6 +38,18 @@ in
     config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/.config/home-manager/files/vim/dotvimrc";
 
+  # coc.nvim 設定。~/.vim は vim/nvim 双方の runtimepath に入るので、
+  # 1ファイルで両方に効く。~/.vimrc と同様 out-of-store symlink で編集を git 管理に乗せる。
+  home.file.".vim/coc-settings.json".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/.config/home-manager/files/vim/coc-settings.json";
+
+  # vim-sonictemplate のユーザ追加テンプレート置き場 (ディレクトリごと out-of-store symlink)。
+  # dotvimrc の g:sonictemplate_vim_template_dir が ~/.vim/sonic-template を参照する。
+  home.file.".vim/sonic-template".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/.config/home-manager/files/vim/sonic-template";
+
   home.file.".vim/autoload/plug.vim".source = vimPlug;
 
   home.sessionVariables = {

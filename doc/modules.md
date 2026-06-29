@@ -36,7 +36,10 @@
 │   │   └── starship.toml
 │   ├── vim/
 │   │   ├── dotvimrc
-│   │   └── dotvimrc-secrets.template
+│   │   ├── dotvimrc-secrets.template
+│   │   ├── coc-settings.json
+│   │   └── sonic-template/
+│   │       └── _/usual_footer
 │   ├── nvim/
 │   │   └── init.vim
 │   └── skkdict/

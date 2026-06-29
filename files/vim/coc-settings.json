@@ -1,0 +1,21 @@
+{
+  "pyright": {
+	  "enable": true,
+	  "analysis": {
+		  "autoImportCompletions": true,
+		  "autoSearchPaths": true
+	  }
+  },
+  "python": {
+	  "pythonPath": "python"
+  },
+  "jedi": {
+    "enable": false,
+    "startupMessage": false,
+    "executable.command": "jedi-language-server"
+  },
+  "tsserver": {
+    "enable": true,
+    "tsconfigPath": "./tsconfig.json"
+  }
+}
