@@ -64,6 +64,13 @@
           oci = true;
           kubernetes = true;
           fonts = true;
+
+          # version manager 群 (既定 false。opt-in で有効化する)。
+          goenv = false;
+          pyenv = false;
+          rustup = false;
+          nvm = false;
+          plenv = false;
         }
         // (localConfig.modules or {});
 

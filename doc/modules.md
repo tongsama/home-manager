@@ -24,11 +24,22 @@
 ├── gui.nix
 ├── wslg.nix
 ├── fcitx5.nix
+├── goenv.nix              # optional (既定 false)
+├── pyenv.nix              # optional (既定 false)
+├── rustup.nix             # optional (既定 false)
+├── nvm.nix                # optional (既定 false)
+├── plenv.nix              # optional (既定 false)
 ├── local.example.nix
 ├── local.nix                 # Git管理外
 ├── .sops.yaml
 ├── .gitignore
 ├── files/
+│   ├── bash/                     # hm-extra.d 用シェルfragment
+│   │   ├── goenv.bash
+│   │   ├── pyenv.bash
+│   │   ├── rustup.bash
+│   │   ├── nvm.bash
+│   │   └── plenv.bash
 │   ├── oci/
 │   │   ├── config.template
 │   │   └── sessions/DEFAULT/oci_api_key_public.pem
@@ -188,28 +199,30 @@ home-manager switch --flake "$HOME/.config/home-manager#default" --impure -b bac
 ```nix
 # local.nix
 modules = {
-  nvim = true;
-  nodejs = true;
-  oci = true;
-  kubernetes = true;   # OKE。実行時はOCI認証が必要
-  fonts = true;
+  oci = false;       # 既定 true のものを外す
+  pyenv = true;      # 既定 false のものを有効化
 };
 ```
 
-* 指定しないキーは **既定 `true`**（未指定なら従来どおり全部入る）。
+* 既定値は `flake.nix` の `moduleConfig`（と `home.nix` の `m`）で定義。指定しないキーは既定値のまま。
 * `false` にすると、その module の import 自体が外れる（評価もされない）。
 * `flake.nix` が既定値と `local.nix` の `modules` をマージし、`extraSpecialArgs.modules`
   として `home.nix` に渡す。`home.nix` が `lib.optional(s)` で import を組み立てる。
 
 切り替え対象 (optional):
 
-| key | 含まれる module |
-|---|---|
-| `nvim` | `nvim.nix` |
-| `nodejs` | `nodejs.nix` |
-| `oci` | `oci.nix` + `secrets-oci.nix` |
-| `kubernetes` | `k8s-tools.nix` + `k8s-oci.nix` |
-| `fonts` | `fonts.nix` |
+| key | 既定 | 含まれる module / 本体 |
+|---|---|---|
+| `nvim` | true | `nvim.nix` |
+| `nodejs` | true | `nodejs.nix` |
+| `oci` | true | `oci.nix` + `secrets-oci.nix` |
+| `kubernetes` | true | `k8s-tools.nix` + `k8s-oci.nix` |
+| `fonts` | true | `fonts.nix` |
+| `goenv` | **false** | `goenv.nix` (本体は Nix 導入) |
+| `pyenv` | **false** | `pyenv.nix` (本体は Nix 導入) |
+| `rustup` | **false** | `rustup.nix` (本体は Nix 導入) |
+| `nvm` | **false** | `nvm.nix` (本体は手動導入前提、`~/.nvm`) |
+| `plenv` | **false** | `plenv.nix` (本体は手動導入前提、`~/.plenv`) |
 
 core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `starship` /
 `gui` / `wslg` / `fcitx5` / `vim`(+`secrets-vim` / `skkdict`)。
@@ -217,6 +230,11 @@ core (常時有効・切り替え対象外): `bash` / `ssh`(+`secrets-ssh`) / `s
 > 補足: `gui` / `wslg` / `fcitx5` は `my.gui.profile` 等で内部的に挙動が変わるため core 扱い。
 > `vim` は主エディタかつ `nvim` の依存元 (init.vim が `~/.vimrc` を source) のため core。
 > `kubernetes`(OKE) は実行時にOCI認証を使うため、実質 `oci` と併用が前提。
+>
+> version manager (goenv/pyenv/rustup/nvm/plenv) は既定 false で、使うものだけ
+> `local.nix` の `modules` で true にする。シェル統合は `files/bash/<tool>.bash` を
+> `~/.config/bash/hm-extra.d/` に配置して行い、`~/.profile` / `~/.bashrc` は触らない。
+> nvm/plenv は nixpkgs に無いため本体は手動導入前提で、未導入ならシェル統合は何もしない。
 
 ### `gui.nix`
 
