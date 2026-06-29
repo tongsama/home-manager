@@ -44,8 +44,8 @@
   #   # version manager 群 (既定 false。使うものだけ true にする)
   #   pyenv = false;       # 本体は Nix で導入
   #   rustup = false;      # 本体は Nix で導入
-  #   goenv = false;       # 本体は手動導入前提 (~/.goenv があれば有効)
-  #   nvm = false;         # 本体は手動導入前提 (~/.nvm があれば有効)
-  #   plenv = false;       # 本体は手動導入前提 (~/.plenv があれば有効)
+  #   goenv = false;       # 有効時に ~/.goenv へ git clone
+  #   nvm = false;         # 有効時に ~/.nvm へ git clone
+  #   plenv = false;       # 有効時に ~/.plenv (+perl-build) へ git clone
   # };
 }
