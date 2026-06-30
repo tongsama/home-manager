@@ -1,7 +1,7 @@
 "========================================================================"
 " vimrc for vim8.x & 9.0.x & nvim
 " 			for windows, linux
-" 									last updated:2026-06-26 18:24.
+" 									last updated:2026-06-30 17:28.
 "
 " 			Plese Install Vundle.vim or vim-plug first.
 "========================================================================"
@@ -868,7 +868,8 @@ call plug#begin(s:vundle_plugin_path)
 	endif
 
     "*** Joplin operation
-	Plug 'tenfyzhong/joplin.vim'
+	"Plug 'tenfyzhong/joplin.vim'
+	Plug 'tongsama/joplin.vim', {'branch': 'fix/joplinsearch'}
 
 	"*** ACME
 	Plug 'mattn/vim-starwars'
