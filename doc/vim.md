@@ -294,11 +294,15 @@ hm-vim-secrets deploy --soft
 
 Vimプラグイン用の外部CLIとして、以下をHome Managerで入れる。
 
-* python3
+* python3 (+ pip。`python3.withPackages (ps: [ ps.pip ])` で同梱)
+* pipx
 * universal-ctags
 * w3m
 * fzf
 * ripgrep
+
+> pip はグローバル install 不可 (store が read-only)。都度は `pip install --user`、
+> CLIアプリは `pipx` を使う。
 
 Node.jsは `vim.nix` ではなく、`nodejs.nix` で管理する。
 

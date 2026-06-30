@@ -23,7 +23,11 @@ in
   home.packages = with pkgs; [
     vimPackage
 
-    python3
+    # python3 + pip (pip は python3.withPackages 経由で入れる)。
+    # グローバルな pip install は store が read-only なので不可。
+    # 都度の利用は `pip install --user`、CLIアプリは pipx を使う。
+    (python3.withPackages (ps: with ps; [ pip ]))
+    pipx
     universal-ctags
     w3m
     fzf
