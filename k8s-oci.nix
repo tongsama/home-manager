@@ -51,7 +51,7 @@ let
           --region "$OCI_REGION" \
           --token-version 2.0.0 \
           --kube-endpoint "$OKE_KUBE_ENDPOINT" \
-          --overwrite
+      #--overwrite
 
       chmod 600 "$kubeconfig_path"
 
