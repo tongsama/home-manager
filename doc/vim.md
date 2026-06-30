@@ -294,11 +294,40 @@ hm-vim-secrets deploy --soft
 
 Vimプラグイン用の外部CLIとして、以下をHome Managerで入れる。
 
-* python3
+* python3 (+ pip / requests。`python3.withPackages` で同梱)
+* pipx
 * universal-ctags
 * w3m
 * fzf
 * ripgrep
+
+> pip はグローバル install 不可 (store が read-only)。都度は `pip install --user`、
+> CLIアプリは `pipx` を使う。
+
+#### vim 埋め込み python3 へのモジュール追加
+
+joplin.vim の `requests` のように、**vim/gVim にリンクされた `+python3`** が import する
+モジュールは、`vim.nix` の `vimPython` (= `python3.withPackages`) に足す。これは vim が
+ビルド時にリンクする python なので、pyenv 等の別 python では代替できない
+(`vim-full.override { python3 = vimPython; }` で差し替えている)。
+
+```nix
+# vim.nix
+vimPython = pkgs.python3.withPackages (ps: with ps; [
+  pip
+  requests
+  # ここに追加
+]);
+```
+
+nvim 側 (`+python3` provider) で同じプラグインを使う場合は、`nvim.nix` の
+`extraPython3Packages` にも同じモジュールを足す。
+
+確認 (vim/gVim 内):
+
+```vim
+:python3 import requests; print(requests.__version__)
+```
 
 Node.jsは `vim.nix` ではなく、`nodejs.nix` で管理する。
 
