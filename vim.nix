@@ -1,8 +1,19 @@
 { pkgs, config, ... }:
 
 let
+  # vim / gVim の埋め込み python3 (+python3) が使う python 環境。
+  # joplin.vim 等のプラグインが import するモジュールはここに足す
+  # (vim がリンクする python なので、pyenv 等の別 python では代替できない)。
+  # shell 用の python/pip もこの環境を共用する。
+  vimPython = pkgs.python3.withPackages (ps: with ps; [
+    pip
+    requests
+  ]);
+
   vimPackage = pkgs.vim-full.override {
     guiSupport = "gtk3";
+    # 埋め込み python3 を vimPython に差し替えてモジュールを使えるようにする
+    python3 = vimPython;
   };
 
   vimPlug = pkgs.runCommand "plug.vim" { } ''
@@ -23,10 +34,10 @@ in
   home.packages = with pkgs; [
     vimPackage
 
-    # python3 + pip (pip は python3.withPackages 経由で入れる)。
+    # vim の埋め込み python3 と同じ環境を shell でも使う (python/pip/requests)。
     # グローバルな pip install は store が read-only なので不可。
     # 都度の利用は `pip install --user`、CLIアプリは pipx を使う。
-    (python3.withPackages (ps: with ps; [ pip ]))
+    vimPython
     # nixpkgs 26.05 の pipx 1.8.0 は packaging ライブラリ差でテストが落ちるため
     # checkPhase を無効化してビルドする (機能には影響なし)。
     (pipx.overridePythonAttrs (old: { doCheck = false; }))
