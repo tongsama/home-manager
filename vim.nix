@@ -27,7 +27,9 @@ in
     # グローバルな pip install は store が read-only なので不可。
     # 都度の利用は `pip install --user`、CLIアプリは pipx を使う。
     (python3.withPackages (ps: with ps; [ pip ]))
-    pipx
+    # nixpkgs 26.05 の pipx 1.8.0 は packaging ライブラリ差でテストが落ちるため
+    # checkPhase を無効化してビルドする (機能には影響なし)。
+    (pipx.overridePythonAttrs (old: { doCheck = false; }))
     universal-ctags
     w3m
     fzf
