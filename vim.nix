@@ -5,8 +5,9 @@ let
   # joplin.vim 等のプラグインが import するモジュールはここに足す
   # (vim がリンクする python なので、pyenv 等の別 python では代替できない)。
   # shell 用の python/pip もこの環境を共用する。
-  # python のバージョンはここで固定 (python314 = 3.14)。
-  vimPython = pkgs.python314.withPackages (ps: with ps; [
+  # python のバージョンは my.vim.python (options.nix) で指定する。
+  # 既定 pkgs.python314 (26.05 系)。24.05 系では python313 等に切り替える。
+  vimPython = config.my.vim.python.withPackages (ps: with ps; [
     pip
     requests
   ]);

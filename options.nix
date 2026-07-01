@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 let
   # optional モジュールの ON/OFF (bool)。
@@ -47,6 +47,19 @@ in
       description = ''
         Google Drive のマウント先。
         空文字 "" にすると Google Drive 連携を無効化する。
+      '';
+    };
+
+    vim.python = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.python314;
+      defaultText = lib.literalExpression "pkgs.python314";
+      description = ''
+        vim (vim.nix) の埋め込み python3 と shell 共用 python に使う
+        python インタプリタパッケージ。
+
+        nixpkgs のバージョンにより利用可能な python が変わるため option 化。
+        例: 26.05 系なら pkgs.python314、24.05 系なら pkgs.python313。
       '';
     };
   };
