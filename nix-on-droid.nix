@@ -36,8 +36,10 @@
     fonts = lib.mkDefault false;
   };
 
-  # 24.05 系 nixpkgs は python314 が無いため python313 を使う。
-  my.vim.python = lib.mkDefault pkgs.python313;
+  # 24.05 系 nixpkgs は python314 が無い。python313 は greenlet 3.0.3 が
+  # py3.13 C API 変更に未対応でビルドできない (requests のテスト依存で連鎖失敗)。
+  # 安定してビルドできる python312 を使う。
+  my.vim.python = lib.mkDefault pkgs.python312;
 
   # my.fcitx5.enable は fcitx5.nix が定義する option。上で disabledModules に
   # 入れたのでここでは設定しない (設定すると存在しない option でエラーになる)。

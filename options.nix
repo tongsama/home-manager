@@ -59,7 +59,8 @@ in
         python インタプリタパッケージ。
 
         nixpkgs のバージョンにより利用可能な python が変わるため option 化。
-        例: 26.05 系なら pkgs.python314、24.05 系なら pkgs.python313。
+        例: 26.05 系なら pkgs.python314、24.05 系なら pkgs.python312
+        (24.05 の python313 は greenlet 等が未対応でビルド不可)。
       '';
     };
   };
