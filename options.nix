@@ -41,6 +41,12 @@ in
       plenv = mkVersionManager "plenv (false | true | \"clone\" | \"nix\")";
     };
 
+    # fcitx5 の有効/無効。実際の有効化には GUI プロファイル (my.gui.profile)
+    # が none 以外である必要もある (fcitx5.nix 参照)。
+    # option 宣言をここに置くことで、fcitx5.nix を import していないホストでも
+    # (存在しない option エラーにならず) 設定・切り替えできる。
+    fcitx5.enable = lib.mkEnableOption "Fcitx5 日本語入力";
+
     googleDrive.dir = lib.mkOption {
       type = lib.types.str;
       default = "~/Gdrive_kwatan";

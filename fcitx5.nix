@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, options, ... }:
 
 let
   cfg = config.my.fcitx5;
@@ -25,64 +25,80 @@ let
       "fcitx5 -d --disable=wayland,waylandim"
     else
       "fcitx5 -d";
-in
-{
-  options.my.fcitx5.enable =
-    lib.mkEnableOption "Fcitx5 Japanese input";
 
-  config = lib.mkIf enableFcitx5 {
-    i18n.inputMethod = {
-      enable = true;
-      type = "fcitx5";
+  # home-manager のバージョンで i18n.inputMethod の API が異なる。
+  #   ~24.11 : i18n.inputMethod.enabled = "fcitx5" (旧API。fcitx5.settings 等は無い)
+  #   25.05~ : i18n.inputMethod.enable = true; type = "fcitx5" (+ fcitx5.settings 等)
+  # options を見て存在するキーだけで組み立てる。無いキーを含めると mkIf false でも
+  # option パス存在検証で落ちるため、plain な条件付き属性 (lib.optionalAttrs) を使う。
+  imOpts = options.i18n.inputMethod;
 
-      fcitx5 = {
-        addons = with pkgs; [
-          fcitx5-mozc
-          fcitx5-gtk
-          qt6Packages.fcitx5-configtool
-        ];
+  imEnableAttr =
+    if imOpts ? type then
+      { enable = true; type = "fcitx5"; }
+    else
+      { enabled = "fcitx5"; };
 
-        # WSLgではWayland frontendを使わない。
-        # native Ubuntu Waylandでは使う。
-        waylandFrontend = isUbuntuWayland;
+  fcitx5SettingsAttr = {
+    inputMethod = {
+      GroupOrder = {
+        "0" = "Default";
+      };
 
-        settings = {
-          inputMethod = {
-            GroupOrder = {
-              "0" = "Default";
-            };
+      "Groups/0" = {
+        Name = "Default";
+        "Default Layout" = "us";
+        DefaultIM = "mozc";
+      };
 
-            "Groups/0" = {
-              Name = "Default";
-              "Default Layout" = "us";
-              DefaultIM = "mozc";
-            };
+      "Groups/0/Items/0" = {
+        Name = "keyboard-us";
+        Layout = "";
+      };
 
-            "Groups/0/Items/0" = {
-              Name = "keyboard-us";
-              Layout = "";
-            };
-
-            "Groups/0/Items/1" = {
-              Name = "mozc";
-              Layout = "";
-            };
-          };
-        };
+      "Groups/0/Items/1" = {
+        Name = "mozc";
+        Layout = "";
       };
     };
+  };
 
-    home.packages = with pkgs; [
-      #fcitx5
-      #fcitx5-mozc
-      #fcitx5-gtk
-      #qt6Packages.fcitx5-configtool
+  fcitx5Attr =
+    {
+      addons = with pkgs; [
+        fcitx5-mozc
+        fcitx5-gtk
+        qt6Packages.fcitx5-configtool
+      ];
+    }
+    # WSLgではWayland frontendを使わない。native Ubuntu Waylandでは使う。
+    // lib.optionalAttrs (imOpts.fcitx5 ? waylandFrontend) {
+      waylandFrontend = isUbuntuWayland;
+    }
+    // lib.optionalAttrs (imOpts.fcitx5 ? settings) {
+      settings = fcitx5SettingsAttr;
+    };
+in
+{
+  # option 宣言 (my.fcitx5.enable) は options.nix に移動済み。
+
+  config = lib.mkIf enableFcitx5 {
+    i18n.inputMethod = imEnableAttr // {
+      fcitx5 = fcitx5Attr;
+    };
+
+    home.packages = [
+      #pkgs.fcitx5
+      #pkgs.fcitx5-mozc
+      #pkgs.fcitx5-gtk
+      #pkgs.qt6Packages.fcitx5-configtool
 
       # XWayland確認用。不要なら外してOK。
-      xprop
+      # 26.05 系は top-level の pkgs.xprop、24.05 系は pkgs.xorg.xprop。
+      (pkgs.xprop or pkgs.xorg.xprop)
 
       # WSLg/native両方でfcitx診断に便利
-      #fcitx5-with-addons
+      #pkgs.fcitx5-with-addons
     ];
 
     home.sessionVariables =

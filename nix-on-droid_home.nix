@@ -5,21 +5,13 @@
   # nix-on-droid 側からはこれ 1 枚を import するだけでよい:
   #
   #   home-manager.config = {
-  #     imports = [ ../home-manager/nix-on-droid.nix ];
+  #     imports = [ (myhome + "/nix-on-droid_home.nix") ];
   #   };
   #
   # home.username / home.homeDirectory は nix-on-droid が設定するので
   # ここでは触らない。
   imports = [
     ./home.nix
-  ];
-
-  # fcitx5.nix は home-manager 24.05 系と i18n.inputMethod API が非互換
-  # (24.05: i18n.inputMethod.enabled / 25.05+: .enable + .type)。
-  # mkIf false でもオプションパスの存在検証で落ちるため、そもそも読み込まない。
-  # Android にデスクトップ入力メソッドは不要なので実害なし。
-  disabledModules = [
-    ./fcitx5.nix
   ];
 
   # PC 前提の重いモジュール / デスクトップ統合は既定で無効化する。
@@ -41,9 +33,11 @@
   # 安定してビルドできる python312 を使う。
   my.vim.python = lib.mkDefault pkgs.python312;
 
-  # my.fcitx5.enable は fcitx5.nix が定義する option。上で disabledModules に
-  # 入れたのでここでは設定しない (設定すると存在しない option でエラーになる)。
+  # fcitx5 と GUI は Android では既定で無効。fcitx5.nix は 24.05/26.05 両対応
+  # なので import 自体はしており、この 2 つの option で切り替えられる
+  # (実際に有効化するには my.gui.profile を none 以外にする必要もある)。
   my.gui.profile = lib.mkDefault "none";
+  my.fcitx5.enable = lib.mkDefault false;
   my.googleDrive.dir = lib.mkDefault "";
 
   # bash のログインシェル (ssh ログイン等) は ~/.bashrc を読まず、
@@ -51,7 +45,7 @@
   # home-manager の bash 設定 (bash.nix) は ~/.bashrc に注入されるため、
   # ログインシェルでも読まれるよう ~/.bash_profile から橋渡しする。
   home.file.".bash_profile".text = ''
-    # Managed by Home Manager (nix-on-droid.nix)
+    # Managed by Home Manager (nix-on-droid_home.nix)
     [ -r "$HOME/.profile" ] && . "$HOME/.profile"
     [ -r "$HOME/.bashrc" ]  && . "$HOME/.bashrc"
   '';
