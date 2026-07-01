@@ -63,5 +63,6 @@ in
   home.file.".ssh/id_rsa_lambda-ai.pub".source =       ./files/ssh/id_rsa_lambda-ai.pub;
   home.file.".ssh/id_rsa_vastai.pub".source =          ./files/ssh/id_rsa_vastai.pub;
   #home.file.".ssh/id_rsa_kagoya.pub".source =          ./files/ssh/id_rsa_kagoya.pub;
+  home.file.".ssh/id_ed25519_nixondroid.pub".source =  ./files/ssh/id_ed25519_nixondroid.pub;
 
 }
