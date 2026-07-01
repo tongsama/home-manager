@@ -1,12 +1,12 @@
-{ pkgs, lib, config, modules ? {}, ... }:
+{ pkgs, lib, config, ... }:
 
 let
-  raw = modules.nodenv or false;                             # false|true|"clone"|"nix"
+  raw = config.my.modules.nodenv;                            # false|true|"clone"|"nix"
   src = if builtins.isString raw then raw else "clone";      # 既定 source = clone
   nodenvDir = "${config.home.homeDirectory}/.nodenv";
   nodeBuildDir = "${nodenvDir}/plugins/node-build";
 in
-{
+lib.mkIf (raw != false) {
   # source の妥当性 / nix在否は assertions (config層) でチェックする。
   # トップレベル assert で pkgs を参照すると module 構造評価で無限再帰になるため。
   assertions = [

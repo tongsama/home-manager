@@ -413,7 +413,7 @@ EOF
     '';
   };
 in
-{
+lib.mkIf config.my.modules.oci {
   home.packages = [
     hmOciSecrets
   ];

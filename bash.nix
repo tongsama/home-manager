@@ -1,6 +1,8 @@
-{ lib, config, pkgs, googleDriveDir ? "~/Gdrive_kwatan", ... }:
+{ lib, config, pkgs, ... }:
 
 let
+  googleDriveDir = config.my.googleDrive.dir;
+
   startMarker = "# >>> home-manager bash extras >>>";
   endMarker = "# <<< home-manager bash extras <<<";
 

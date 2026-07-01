@@ -1,11 +1,11 @@
-{ pkgs, lib, config, modules ? {}, ... }:
+{ pkgs, lib, config, ... }:
 
 let
-  raw = modules.pyenv or false;                              # false|true|"clone"|"nix"
+  raw = config.my.modules.pyenv;                             # false|true|"clone"|"nix"
   src = if builtins.isString raw then raw else "clone";      # 既定 source = clone
   pyenvDir = "${config.home.homeDirectory}/.pyenv";
 in
-{
+lib.mkIf (raw != false) {
   assertions = [
     {
       assertion = src == "clone" || src == "nix";

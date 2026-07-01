@@ -3,7 +3,7 @@
 let
   npmGlobalDir = "${config.home.homeDirectory}/.local/share/npm-global";
 in
-{
+lib.mkIf config.my.modules.nodejs {
   home.packages = with pkgs; [
     nodejs
 

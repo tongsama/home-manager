@@ -1,10 +1,10 @@
-{ pkgs, lib, modules ? {}, ... }:
+{ pkgs, lib, config, ... }:
 
 let
-  raw = modules.rustup or false;                             # false|true|"nix"
+  raw = config.my.modules.rustup;                            # false|true|"nix"
   src = if builtins.isString raw then raw else "nix";        # 既定 source = nix
 in
-{
+lib.mkIf (raw != false) {
   # rustup は git clone 方式が無い (公式は curl インストーラ) ため nix のみ対応。
   assertions = [
     {

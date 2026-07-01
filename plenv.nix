@@ -1,12 +1,12 @@
-{ pkgs, lib, config, modules ? {}, ... }:
+{ pkgs, lib, config, ... }:
 
 let
-  raw = modules.plenv or false;                              # false|true|"clone"|"nix"
+  raw = config.my.modules.plenv;                             # false|true|"clone"|"nix"
   src = if builtins.isString raw then raw else "clone";      # 既定 source = clone
   plenvDir = "${config.home.homeDirectory}/.plenv";
   perlBuildDir = "${plenvDir}/plugins/perl-build";
 in
-{
+lib.mkIf (raw != false) {
   assertions = [
     {
       assertion = src == "clone" || src == "nix";

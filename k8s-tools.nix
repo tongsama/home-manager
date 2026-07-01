@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   helm = pkgs.wrapHelm pkgs.kubernetes-helm {
@@ -7,7 +7,7 @@ let
     ];
   };
 in
-{
+lib.mkIf config.my.modules.kubernetes {
   home.packages = with pkgs; [
     kubectl
     helm

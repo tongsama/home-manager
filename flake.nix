@@ -84,6 +84,10 @@
         else
           "${homePrefix}/${username}";
 
+      guiProfile = localConfig.guiProfile or "none";
+      fcitx5Enable = localConfig.fcitx5Enable or false;
+      googleDriveDir = localConfig.googleDriveDir or "~/Gdrive_kwatan";
+
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
@@ -93,22 +97,22 @@
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
 
-          extraSpecialArgs = {
-            inherit
-              username
-              homeDirectory
-              localConfigLoaded
-              localConfigPathString
-              ;
-            #wslgEnable = localConfig.wslgEnable or false;
-            guiProfile = localConfig.guiProfile or "none";
-            fcitx5Enable = localConfig.fcitx5Enable or false;
-            googleDriveDir = localConfig.googleDriveDir or "~/Gdrive_kwatan";
-            modules = moduleConfig;
-          };
-
           modules = [
             ./home.nix
+
+            # PC 用の値は local.nix 由来。home.nix が定義する option へ流し込む。
+            {
+              home.username = username;
+              home.homeDirectory = homeDirectory;
+
+              my.gui.profile = guiProfile;
+              my.fcitx5.enable = fcitx5Enable;
+              my.googleDrive.dir = googleDriveDir;
+              my.modules = moduleConfig;
+
+              my.guard.enable = true;
+              my.guard.localConfigLoaded = localConfigLoaded;
+            }
           ];
         };
     in

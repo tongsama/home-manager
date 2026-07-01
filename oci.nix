@@ -50,7 +50,7 @@ let
     '';
   };
 in
-{
+lib.mkIf config.my.modules.oci {
   home.packages = with pkgs; [
     oci-cli
     installOciPublicFiles

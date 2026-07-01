@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   mkGithubReleaseFont =
@@ -71,7 +71,7 @@ let
     # })
   ];
 in
-{
+lib.mkIf config.my.modules.fonts {
   fonts.fontconfig.enable = true;
 
   home.packages =

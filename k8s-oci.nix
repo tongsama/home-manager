@@ -63,7 +63,7 @@ let
     '';
   };
 in
-{
+lib.mkIf config.my.modules.kubernetes {
   home.packages = with pkgs; [
     okeKubeconfig
   ];

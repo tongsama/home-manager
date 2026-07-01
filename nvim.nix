@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   # vimspector など +python3 を要求するプラグインのため、python3 provider を有効化する。
@@ -11,7 +11,7 @@ let
     extraPython3Packages = ps: with ps; [ pynvim requests ];
   };
 in
-{
+lib.mkIf config.my.modules.nvim {
   home.packages = [
     neovim
   ];
