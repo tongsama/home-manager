@@ -46,6 +46,16 @@
   my.gui.profile = lib.mkDefault "none";
   my.googleDrive.dir = lib.mkDefault "";
 
+  # bash のログインシェル (ssh ログイン等) は ~/.bashrc を読まず、
+  # ~/.bash_profile → ~/.bash_login → ~/.profile の順で探す。
+  # home-manager の bash 設定 (bash.nix) は ~/.bashrc に注入されるため、
+  # ログインシェルでも読まれるよう ~/.bash_profile から橋渡しする。
+  home.file.".bash_profile".text = ''
+    # Managed by Home Manager (nix-on-droid.nix)
+    [ -r "$HOME/.profile" ] && . "$HOME/.profile"
+    [ -r "$HOME/.bashrc" ]  && . "$HOME/.bashrc"
+  '';
+
   # local.nix 機構 (flake + --impure) は使わないのでガードを無効化する。
   my.guard.enable = lib.mkDefault false;
 
