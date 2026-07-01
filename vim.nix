@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   # vim / gVim の埋め込み python3 (+python3) が使う python 環境。
@@ -28,7 +28,7 @@ let
     ${pkgs.coreutils}/bin/cp "$plug" "$out"
   '';
 in
-{
+lib.mkIf config.my.modules.vim {
   # programs.vim は使わない
   programs.vim.enable = false;
 

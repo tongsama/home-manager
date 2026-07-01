@@ -27,6 +27,7 @@ in
   # nix-on-droid など他ホストは nix-on-droid.nix / 各自の設定で上書きする。
   options.my = {
     modules = {
+      vim = mkToggle true "Vim (埋め込み python3 付き) を導入する";
       nvim = mkToggle true "Neovim を導入する";
       nodejs = mkToggle true "Node.js を導入する";
       oci = mkToggle true "OCI CLI と関連 secrets を導入する";
