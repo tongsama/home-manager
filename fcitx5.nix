@@ -47,12 +47,12 @@ let
 
       "Groups/0" = {
         Name = "Default";
-        "Default Layout" = "us";
+        "Default Layout" = "jp";
         DefaultIM = "mozc";
       };
 
       "Groups/0/Items/0" = {
-        Name = "keyboard-us";
+        Name = "keyboard-jp";
         Layout = "";
       };
 
@@ -60,6 +60,12 @@ let
         Name = "mozc";
         Layout = "";
       };
+
+      "Groups/0/Items/2" = {
+        Name = "keyboard-us";
+        Layout = "";
+      };
+
     };
   };
 
